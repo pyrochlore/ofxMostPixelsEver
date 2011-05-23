@@ -4,11 +4,17 @@ This is an openFrameworks-centric fork of the wonderful Most Pixels Ever library
 one downfall is it isn't compatible with the existing java jar, but only works openframeworks client  to openframeworks server.
 
 This version features:
+
 * Updated for OF 007
+
 * servers and clients automatically reconnect if things crash/restart and reset the frame count intelligently
+
 * openFrameworks events driven
+
 * option to run updates on the main thread or backthread for increase performance (backthread updates must avoid OpenGL calls)
+
 * hopefully simpler client code!
+
 * tested on windows/os x
 
 TODO:
