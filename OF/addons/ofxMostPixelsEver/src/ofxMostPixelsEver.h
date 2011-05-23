@@ -1,18 +1,18 @@
 /**
- *  mpeEvents.h
  *  openFrameworks version of the popular synchronization system Most Pixels Ever by Dan Shiffman
  *  original repo: https://github.com/shiffman/Most-Pixels-Ever
  *  our fork: https://github.com/FlightPhase/Most-Pixels-Ever
+ *
+ *  I affectionately refer to as "Most Pickles Ever" since it's gotten me out of the most pickles. ever!
  * 
- *  Created by James George on 5/17/11 @ Flightphase for the National Maritime Museum: Voyagers installation
+ *  Standing on the shoulders of the original creators:
+ *  Dan Shiffman with Jeremy Rotsztain, Elie Zananiri, Chris Kairalla.
+ *  Extended by James George on 5/17/11 @ Flightphase for the National Maritime Museum
  *
- *  Biggest features are:
- *  Server/Client auto reconnect
- *  Events model
- *  Main thread or backthread options
- *  Fast on PC!
+ *  Still need to convert the original examples to the new format
+ * 
+ *  There is a drawback that this is not compatible with the Java MPE jar, the connections must go OF client to OF Server
  *
- *	More examples needed! 
  */
 
 #pragma once
