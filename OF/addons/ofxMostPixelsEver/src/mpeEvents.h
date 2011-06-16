@@ -38,6 +38,7 @@ class ofxMPECoreEvents
   public:
     ofEvent<ofxMPEEventArgs> mpeFrame;	
   	ofEvent<ofxMPEEventArgs> mpeMessage;
+	ofEvent<ofxMPEEventArgs> mpeReset; //reset everything, used when the client or server goes down
 	//TODO:
 //	ofEvent<ofxMPEEventArgs> mpeInts;
 //	ofEvent<ofxMPEEventArgs> mpeBytes;
@@ -50,6 +51,8 @@ template<class ListenerClass>
 void ofxMPERegisterEvents(ListenerClass * listener){
     ofAddListener(ofxMPEEvents.mpeFrame, listener, &ListenerClass::mpeFrameEvent);
     ofAddListener(ofxMPEEvents.mpeMessage, listener, &ListenerClass::mpeMessageEvent);
+    ofAddListener(ofxMPEEvents.mpeReset, listener, &ListenerClass::mpeResetEvent);
+	
 	//TODO:	
 //	ofAddListener(ofxMPEEvents.mpeBytes, listener, &ListenerClass::mpeByteEvent);
 //	ofAddListener(ofxMPEEvents.mpeInts, listener, &ListenerClass::mpeIntEvent);

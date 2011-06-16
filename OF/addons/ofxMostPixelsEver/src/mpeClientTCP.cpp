@@ -4,13 +4,13 @@
  *  our fork: https://github.com/FlightPhase/Most-Pixels-Ever
  *
  *  I affectionately refer to as "Most Pickles Ever" since it's gotten me out of the most pickles. ever!
- * 
+ *
  *  Standing on the shoulders of the original creators:
  *  Dan Shiffman with Jeremy Rotsztain, Elie Zananiri, Chris Kairalla.
  *  Extended by James George on 5/17/11 @ Flightphase for the National Maritime Museum
  *
  *  Still need to convert the original examples to the new format
- * 
+ *
  *  There is a drawback that this is not compatible with the Java MPE jar, the connections must go OF client to OF Server
  *
  */
@@ -27,33 +27,40 @@ mpeClientTCP::mpeClientTCP() {
 void mpeClientTCP::setup(string _fileString, bool updateOnMainThread) {
 
 	useMainThread = updateOnMainThread;
-	
+
     loadIniFile(_fileString);
-    ofSetWindowShape(lWidth, lHeight);
 	frameCount = 0;
+	shouldReset = false;
+	heartbeatInterval = 0;
+	timeOfNextHeartbeat = ofGetElapsedTimef();
+}
+
+//will work offline
+void  mpeClientTCP::useSimulationMode(int framesPerSecond)
+{
+	simulatedFPS = framesPerSecond;
+	simulationMode = true;
+	lastFrameTime = ofGetElapsedTimef();
 }
 
 //--------------------------------------------------------------
 void mpeClientTCP::start() {
-    
+
 	tcpClient.setVerbose(DEBUG);
 
-	if(useMainThread){
-		ofAddListener(ofEvents.draw, this, &mpeClientTCP::draw);
-	}
-	
-    if (!tcpClient.setup(hostName, serverPort)) {
+	//if(useMainThread){
+    ofAddListener(ofEvents.draw, this, &mpeClientTCP::draw);
+	//}
+
+    if (!simulationMode && !tcpClient.setup(hostName, serverPort)) {
         err("TCP failed to connect to port " + ofToString(serverPort));
 		lastConnectionAttempt = ofGetElapsedTimef();
 		ofAddListener(ofEvents.update, this, &mpeClientTCP::retryConnectionLoop);
     }
 	else{
-		
 		startThread(true, false);  // blocking, verbose
 		out("TCP connection bound on port " + ofToString(serverPort));
 	}
-    
-    
 }
 
 void mpeClientTCP::retryConnectionLoop(ofEventArgs& e)
@@ -61,7 +68,7 @@ void mpeClientTCP::retryConnectionLoop(ofEventArgs& e)
 	float now = ofGetElapsedTimef();
 	if(now - lastConnectionAttempt > 1.0){ //retry every second
 		if(tcpClient.setup(hostName, serverPort)) {
-			cout << "retry succeeded, removing listener!" << endl;
+			//cout << "retry succeeded, removing listener!" << endl;
 			ofRemoveListener(ofEvents.update, this, &mpeClientTCP::retryConnectionLoop);
 			startThread(true, false);  // blocking, verbose
 		}
@@ -72,35 +79,47 @@ void mpeClientTCP::retryConnectionLoop(ofEventArgs& e)
 void mpeClientTCP::draw(ofEventArgs& e)
 {
     //no blocking
-    if(lock()) {
-		
+    if(useMainThread && lock()) {
+
 		for(int i = 0; i < dataMessage.size(); i++){
 			ofxMPEEventArgs e;
 			e.message = dataMessage[i];
 			e.frame = getFrameCount();
-			cout << "sending message in update " << e.frame << " message " << e.message << endl;
-			
+			//cout << "sending message in update " << e.frame << " message " << e.message << endl;
+
 			ofNotifyEvent(ofxMPEEvents.mpeMessage, e);
-		}		
-		
+		}
 		dataMessage.clear();
-		//TODO: ints, floats, bytes, 
+
+		//TODO: ints, floats, bytes,
+
+		if(shouldReset){
+			reset();
+		}
 
 		if(triggerFrame){
-			cout << "Trigger Event :: ! with frame count " << frameCount << endl;
-			
+			//ofLog(OF_LOG_VERBOSE, "Trigger Event :: ! with frame count " + frameCount);
+
 			triggerFrame = false;
-			//rendering = true;// wait until done
+
+//            cout << "triggering frame" << endl;
 
 			ofxMPEEventArgs e;
 			e.message = "";
 			e.frame = frameCount;
 			ofNotifyEvent(ofxMPEEvents.mpeFrame, e);
-			
-			done();
+
+			if(!simulationMode){
+				done();
+			}
 		}
-		
+
 		unlock();
+    }
+
+    //cout << ofGetWidth() << " :: " << lWidth << "  " << ofGetHeight() << " :: " << lHeight << endl;
+    if(ofGetWindowPositionX() != xOffset || ofGetWindowPositionY() != yOffset || ofGetWidth() != lWidth || ofGetHeight() != lHeight){
+        setupViewport();
     }
 }
 
@@ -137,13 +156,20 @@ void mpeClientTCP::loadIniFile(string _fileString) {
         err("ERROR loading XML file!");
 		return;
 	}
-	
+
     // parse INI file
     hostName   = xmlReader.getValue("settings:server:ip", "127.0.0.1", 0);
     serverPort = xmlReader.getValue("settings:server:port", 7887, 0);
-	id         = xmlReader.getValue("settings:client_id", -1, 0);
-
-
+    //turn this off if you don't want this client to sync frames but can still
+    //receive messages. default is ON as that's the normal behavior
+    frameLock = xmlReader.getValue("settings:framelock", true);
+    if(frameLock){
+        id         = xmlReader.getValue("settings:client_id", -1, 0);
+        clientName = xmlReader.getValue("settings:client_name", "noname", 0);
+    }
+    else{
+        cout << "opting out of frame lock" << endl;
+    }
 	cout << "***MPE:: HOST IS " << hostName << " Server Port is " << serverPort << endl;
 
 	setLocalDimensions(xmlReader.getValue("settings:local_dimensions:width",  640, 0),
@@ -155,18 +181,34 @@ void mpeClientTCP::loadIniFile(string _fileString) {
 	setMasterDimensions(xmlReader.getValue("settings:master_dimensions:width",  640, 0),
 						xmlReader.getValue("settings:master_dimensions:height", 480, 0));
 
-	if (xmlReader.getValue("settings:go_fullscreen", "false", 0).compare("true") == 0)
-		ofSetFullscreen(true);
+    goFullScreen = xmlReader.getValue("settings:go_fullscreen", "false", 0).compare("true") == 0;
+    offsetWindow = xmlReader.getValue("settings:offset_window", "false", 0).compare("true") == 0;
 
-	if(xmlReader.getValue("settings:offset_window", "false", 0).compare("true") == 0)
-		ofSetWindowPosition(xOffset, yOffset);
+    setupViewport();
 
-	if (xmlReader.getValue("settings:debug", 0, 0) == 1)
+	if (xmlReader.getValue("settings:debug", 0, 0) == 1){
         DEBUG = true;
+	}
+
+    if(xmlReader.getValue("settings:simulation:on", 0, 0) == 1){
+        useSimulationMode(xmlReader.getValue("settings:simulation:fps", 30));
+        cout << "using simulation mode" << endl;
+    }
 
     out("Settings: server = " + hostName + ":" + ofToString(serverPort) + ",  id = " + ofToString(id)
         + ", local dimensions = " + ofToString(lWidth) + ", " + ofToString(lHeight)
         + ", location = " + ofToString(xOffset) + ", " + ofToString(yOffset));
+}
+
+void mpeClientTCP::setupViewport()
+{
+	if (goFullScreen){
+		ofSetFullscreen(true);
+    }
+	if(offsetWindow){
+		ofSetWindowPosition(xOffset, yOffset);
+        ofSetWindowShape(lWidth, lHeight);
+	}
 }
 
 bool mpeClientTCP::isConnected()
@@ -347,37 +389,74 @@ void mpeClientTCP::err(string _str) {
 void mpeClientTCP::threadedFunction() {
     out("Running!");
 
-    // let the server know that this client is ready to start
-    send("S" + ofToString(id));
+    if(frameLock){
+        // let the server know that this client is ready to start
+        send("S" + ofToString(id) + "," + clientName);
+    }
+	else{
+		//start a listener
+		send("L");
+	}
 	
-    while (isThreadRunning()) {
-		if(!tcpClient.isConnected()){
-			//we lost connection, start the retry loop and kill the thread
-			lastConnectionAttempt =  ofGetElapsedTimef();
-			ofAddListener(ofEvents.update, this, &mpeClientTCP::retryConnectionLoop);
-			stopThread(true);
-			frameCount = 0;
-			return;
-		}
-		
-        if (lock()) {
-			
-			//JG added this call conditional
-			//we shouldn't consume more data until the current frame is finished rendered
-//			if(!rendering){
-				//string msg = tcpClient.receiveRaw();
-				string msg = tcpClient.receive();
-				if (msg.length() > 0 && lastmsg != msg) {
-					read(msg);
-                    lastmsg = msg;
-					cout << "MPE Client :: Received " << msg << endl;
+    while(isThreadRunning()) {
+
+		if(frameLock && simulationMode){
+
+			float now = ofGetElapsedTimef();
+			if(now - lastFrameTime > 1./simulatedFPS){
+				if(!useMainThread){
+					ofxMPEEventArgs e;
+					e.message = "";
+					e.frame = frameCount;
+					ofNotifyEvent(ofxMPEEvents.mpeFrame, e);
 				}
-//			}
-			
-			unlock();
+				else {
+					triggerFrame = true;
+				}
+
+				lastFrameTime = now;
+				frameCount++;
+			}
 
             ofSleepMillis(5);
+			continue;
+		}
+
+		if(!tcpClient.isConnected()){
+			//we lost connection, start the retry loop and kill the thread
+			lastConnectionAttempt = ofGetElapsedTimef();
+			ofAddListener(ofEvents.update, this, &mpeClientTCP::retryConnectionLoop);
+			stopThread(true);
+			if(useMainThread){
+				shouldReset = true;
+			}
+			else{
+				reset();
+			}
+
+			if(DEBUG){
+                cout << "lost connection to server " << endl;
+			}
+			//break the loop because we'll need to restart
+			return;
+		}
+
+        if (!useMainThread || (useMainThread && lock()) ) {
+
+			//JG added this call conditional
+			//we shouldn't consume more data until the current frame is finished rendered
+            string msg = tcpClient.receive();
+            if (msg.length() > 0 && lastmsg != msg) {
+                read(msg);
+                lastmsg = msg;
+            }
+			
+			if(useMainThread){
+				unlock();
+			}
+
         }
+        ofSleepMillis(5);
     }
 }
 
@@ -390,7 +469,12 @@ void mpeClientTCP::read(string _serverInput) {
     char c = _serverInput.at(0);
 	if(c == 'R'){
 		//we received a reset signal
-		frameCount = 0;
+		if(useMainThread){
+			shouldReset = true;
+		}
+		else{
+			reset();
+		}
 		cout << "Received frame reset" << endl;
 	}
     else if (c == 'G' || c == 'B' || c == 'I') {
@@ -398,54 +482,14 @@ void mpeClientTCP::read(string _serverInput) {
             if (DEBUG) out("all connected!");
             allConnected = true;
         }
-		
+
         // split into frame message and data message
         vector<string> info = ofSplitString(_serverInput, ":");
         vector<string> frameMessage = ofSplitString(info[0], ",");
         int fc = ofToInt(frameMessage[1]);
 
-        if (info.size() > 1) {
-            // there is a message here with the frame event
-            info.erase(info.begin());
-			
-            //TODO: Track Byte/Int/Floats messages too
-            for(int i = 0; i < info.size(); i++){
-				if(useMainThread){
-					dataMessage.push_back( info[i] );
-				}
-				else{
-					ofxMPEEventArgs e;
-					e.message = dataMessage[i];
-					e.frame = getFrameCount();
-					
-					cout << "sending message in update " << e.frame << " message " << e.message << endl;
-					
-					ofNotifyEvent(ofxMPEEvents.mpeMessage, e);					
-					
-				}
-				//cout << "MPE frame " << getFrameCount() << " receiving data message " << dataMessage[i] << endl;
-            }
-			
-//			if(useMessageMode){
-//				for(int i = 0; i < info.size(); i++){
-//					ofSendMessage(info[i]);
-//				}
-//			}
-//			else {
-//                cout << " message is available " << endl;
-//				bMessageAvailable = true;
-//			}
-		}
-//        } else {
-//    		//cout << " message not available " << endl;
-////            bMessageAvailable = false;
-//        }
 
-        // assume no arrays are available
-//        bIntsAvailable  = false;
-//        bBytesAvailable = false;
-
-        if (fc == frameCount) {
+        if (frameLock && fc == frameCount) {
             frameCount++;
 
             // calculate new framerate
@@ -454,29 +498,80 @@ void mpeClientTCP::read(string _serverInput) {
             lastMs = ofGetElapsedTimeMillis();
 
 			if(!useMainThread){
-//				rendering = true;
+
+                //cout << "trigger frame " << frameCount << endl;
+
 				ofxMPEEventArgs e;
 				e.message = "";
 				e.frame = frameCount;
-				ofNotifyEvent(ofxMPEEvents.mpeFrame, e);	
+				ofNotifyEvent(ofxMPEEvents.mpeFrame, e);
+
 				done();
             }
 			else {
+                //cout << "trigger frame " << frameCount << endl;
 				triggerFrame = true;
 			}
         }
+
+         //JG switched to after done event
+        if (info.size() > 1) {
+            // there is a message here with the frame event
+            info.erase(info.begin());
+
+            //TODO: Track Byte/Int/Floats messages too
+            for(int i = 0; i < info.size(); i++){
+				if(useMainThread){
+					dataMessage.push_back( info[i] );
+				}
+				else{
+					ofxMPEEventArgs e;
+					e.message = info[i];
+					e.frame = getFrameCount();
+
+					//cout << "sending message in update " << e.frame << " message " << e.message << endl;
+
+					ofNotifyEvent(ofxMPEEvents.mpeMessage, e);
+
+				}
+				//cout << "MPE frame " << getFrameCount() << " receiving data message " << dataMessage[i] << endl;
+            }
+		}
+
     }
 }
+
+void mpeClientTCP::reset()
+{
+	ofxMPEEventArgs e;
+	e.message = "reset";
+	e.frame = frameCount;
+	ofNotifyEvent(ofxMPEEvents.mpeReset, e);
+
+	shouldReset = false;
+	frameCount = 0;
+}
+
+//void mpeClientTCP::sendPauseEvent()
+//{
+//	ofxMPEEventArgs e;
+//	e.message = "pause";
+//	e.frame = frameCount;
+//
+//	ofNotifyEvent(ofxMPEEvents.mpePause, e);
+//}
 
 //--------------------------------------------------------------
 // Send a message to the server.
 //--------------------------------------------------------------
 void mpeClientTCP::send(string _msg) {
-    out("Sending: " + _msg);
 
-    _msg += "\n";
-    //tcpClient.sendRaw(_msg);
-	tcpClient.send(_msg);
+    //_msg += "\n";
+	if(!simulationMode && frameLock){
+		out("Sending: " + _msg);
+		//tcpClient.sendRaw(_msg);
+		tcpClient.send(_msg);
+	}
 }
 
 //--------------------------------------------------------------
@@ -484,8 +579,12 @@ void mpeClientTCP::send(string _msg) {
 // Do not use a colon ':' in your message!!!
 //--------------------------------------------------------------
 void mpeClientTCP::broadcast(string _msg) {
-    _msg = "T" + _msg;
-    send(_msg);
+	if(!simulationMode){
+		outgoingMessage += "," + _msg;
+		//cout << "outgoing message is now " << outgoingMessage << endl;
+	}
+//    _msg = "T" + _msg;
+    //send(_msg);
 }
 
 //--------------------------------------------------------------
@@ -493,9 +592,14 @@ void mpeClientTCP::broadcast(string _msg) {
 // the end of the draw loop.
 //--------------------------------------------------------------
 //TODO: if done has already been called, dont call it again
-void mpeClientTCP::done() {	
+void mpeClientTCP::done() {
 //    rendering = false;
     string msg = "D," + ofToString(id) + "," + ofToString(frameCount);
+	if(outgoingMessage != ""){
+		msg += outgoingMessage;
+		outgoingMessage = "";
+		//cout << "MPE DEBUG :: outgoing message is " << msg << endl;
+	}
     send(msg);
 }
 

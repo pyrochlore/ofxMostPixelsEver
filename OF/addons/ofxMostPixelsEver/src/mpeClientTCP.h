@@ -4,13 +4,13 @@
  *  our fork: https://github.com/FlightPhase/Most-Pixels-Ever
  *
  *  I affectionately refer to as "Most Pickles Ever" since it's gotten me out of the most pickles. ever!
- * 
+ *
  *  Standing on the shoulders of the original creators:
  *  Dan Shiffman with Jeremy Rotsztain, Elie Zananiri, Chris Kairalla.
  *  Extended by James George on 5/17/11 @ Flightphase for the National Maritime Museum
  *
  *  Still need to convert the original examples to the new format
- * 
+ *
  *  There is a drawback that this is not compatible with the Java MPE jar, the connections must go OF client to OF Server
  *
  */
@@ -30,13 +30,16 @@ class mpeClientTCP : public ofThread {
 
   public:
 	mpeClientTCP();
-	
+
+	//must call this before calling setup and it will work offline
+	void  useSimulationMode(int framesPerSecond); //will work offline
+
 	void setup(string _fileString, bool mainThreadOnly = true);
 	//TODO: simple non-xml based setup method
-	//void setup(string hostname, int clientId, int port, bool mainThreadOnly = true); 
-	
+	//void setup(string hostname, int clientId, int port, bool mainThreadOnly = true);
+
 	void  done(); //done drawing
-	
+
 	void  start();
 	void  stop();
 
@@ -45,7 +48,7 @@ class mpeClientTCP : public ofThread {
 	int   getPort() { return serverPort; }
 	int   getID()   { return id; }
 
-	
+
 	//we need this incase the server launches after the clients
 	void setDoesRetry(bool doRetry);
 
@@ -59,6 +62,8 @@ class mpeClientTCP : public ofThread {
 	int   getYoffset() { return yOffset; }
 	int   getMWidth()  { return mWidth; }
 	int   getMHeight() { return mHeight; }
+
+    void setClientName(string name){ clientName = name; }
 
 	int   getFrameCount() { return frameCount; }
 	float getFPS()        { return fps; }
@@ -79,21 +84,22 @@ class mpeClientTCP : public ofThread {
 
 	void  broadcast(string _msg);
 	bool  areAllConnected() { return allConnected; }
-	
+
 //	bool  messageAvailable() { return bMessageAvailable; }
 	//TODO: Add int//byte event
 //	vector<string> getDataMessage() { return dataMessage; }
 //	bool  intsAvailable() { return bIntsAvailable; }
 //	vector<int> getInts() { return ints; }
-	//TODO add 
+	//TODO add
 //	bool  bytesAvailable() { return bBytesAvailable; }
 //	vector<char> getBytes() { return bytes; }
-	
+
 	bool  DEBUG;
 
   protected:
 	void setDefaults() {
 		DEBUG = true;
+        frameLock = true;
 
 		id = 0;
 		mWidth  = -1;
@@ -102,30 +108,38 @@ class mpeClientTCP : public ofThread {
 		lHeight = 480;
 		xOffset = 0;
 		yOffset = 0;
-		
+
 		retryConnection = true;
 		triggerFrame = false;
-		//rendering = false;
+
 		lastConnectionAttempt = 0;
 		isAttemptingToConnect = false;
-		
+		simulationMode = false;
+
 		frameCount = 0;
 		fps        = 0.f;
 		lastMs     = 0;
 
 		allConnected = false;
 
+		outgoingMessage = "";
+
 		lastmsg = "";
+
+        goFullScreen = false;
+        offsetWindow = false;
 
 		bEnable3D    = false;
 		fieldOfView = 30.f;
 
+
+		clientName = "noname";
 	}
 
 	//void _draw(ofEventArgs &e) { draw(); }
 	void draw(ofEventArgs& e);
 	void retryConnectionLoop(ofEventArgs& e);
-	
+
 	void threadedFunction();
 
 	void loadIniFile(string _fileString);
@@ -137,9 +151,13 @@ class mpeClientTCP : public ofThread {
 	void  print(string _msg);
 	void  err(string _msg);
 
+    void setupViewport();
+
 //        void run();
 	void read(string _serverInput);
 	void send(string _msg);
+
+	void reset();
 
 //	bool useMessageMode; //sends messages instead of a callback
 //	mpeClientListener* parent;
@@ -153,6 +171,8 @@ class mpeClientTCP : public ofThread {
 	int id;
 	/** The total number of screens. */
 	int numScreens;
+    bool goFullScreen;
+    bool offsetWindow;
 
 	/** The master width. */
 	int mWidth;
@@ -166,28 +186,41 @@ class mpeClientTCP : public ofThread {
 
 	int xOffset;
 	int yOffset;
+
+	string outgoingMessage;
+
+    bool frameLock;
 	bool retryConnection; //TODO: retry connection
 	bool isAttemptingToConnect;
 	float lastConnectionAttempt;
-	
+
+    string clientName;
+
 	bool triggerFrame;
+	bool shouldReset;
 	//bool rendering;
 	bool useMainThread;
 
-	
+	//simulation mode
+	bool simulationMode;
+	float lastFrameTime;
+	int simulatedFPS;
+
 	int   frameCount;
 	float fps;
 	long  lastMs;
 
 	/** True if all the other clients are connected. */
 	bool allConnected;
-	
+
 	bool bMessageAvailable;
 	bool bIntsAvailable;
 	bool bBytesAvailable;
 	vector<string> dataMessage;
 	vector<int>    ints;
 	vector<char>   bytes;
+	float heartbeatInterval;
+	float timeOfNextHeartbeat;
 
 	string lastmsg; //used to ignore duplicates
 
