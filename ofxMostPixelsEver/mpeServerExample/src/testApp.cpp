@@ -2,8 +2,8 @@
 
 //--------------------------------------------------------------
 void testApp::setup(){
+	ofSetFrameRate(30);
 	server.setup("mpe_server_settings.xml");
-
 }
 
 //--------------------------------------------------------------
@@ -13,7 +13,10 @@ void testApp::update(){
 
 //--------------------------------------------------------------
 void testApp::draw(){
-
+	ofBackground(255);
+	ofSetColor(0);
+	
+	ofDrawBitmapString("Most Pixels Ever Server", ofPoint(30, 30) );
 }
 
 //--------------------------------------------------------------

@@ -195,7 +195,12 @@ void mpeServerTCP::threadedFunction()
 
 			//cout << "All clients are connected! " << endl;
 
-			for(int i = 0; i < server.getNumClients(); i++){
+			for(int i = 0; i < server.getLastID(); i++){
+				
+				if(!server.isClientConnected(i)){
+					continue;
+				}
+				
 				string response = server.receive(i);
 
 				if(response == ""){
