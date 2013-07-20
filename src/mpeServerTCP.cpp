@@ -311,7 +311,7 @@ void mpeServerTCP::close()
 {
 	if(!running) return;
 
-	ofRemoveListener(ofEvents.update, this, &mpeServerTCP::update);
+	ofRemoveListener(ofEvents().update, this, &mpeServerTCP::update);
 
 	cout << " closing MPE Server " << endl;
 

@@ -108,7 +108,6 @@
 		E76B8DD613DF3EA60091E482 /* ofxTCPServer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxTCPServer.h; sourceTree = "<group>"; };
 		E76B8DD713DF3EA60091E482 /* ofxUDPManager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ofxUDPManager.cpp; sourceTree = "<group>"; };
 		E76B8DD813DF3EA60091E482 /* ofxUDPManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxUDPManager.h; sourceTree = "<group>"; };
-		E76B8DE013DF3EB20091E482 /* install.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = install.xml; sourceTree = "<group>"; };
 		E76B8DE213DF3EB20091E482 /* tinyxml.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = tinyxml.cpp; sourceTree = "<group>"; };
 		E76B8DE313DF3EB20091E482 /* tinyxml.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tinyxml.h; sourceTree = "<group>"; };
 		E76B8DE413DF3EB20091E482 /* tinyxmlerror.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = tinyxmlerror.cpp; sourceTree = "<group>"; };
@@ -290,7 +289,6 @@
 		E76B8DDF13DF3EB20091E482 /* ofxXmlSettings */ = {
 			isa = PBXGroup;
 			children = (
-				E76B8DE013DF3EB20091E482 /* install.xml */,
 				E76B8DE113DF3EB20091E482 /* libs */,
 				E76B8DE613DF3EB20091E482 /* src */,
 			);

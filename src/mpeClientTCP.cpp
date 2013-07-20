@@ -50,13 +50,13 @@ void mpeClientTCP::start() {
 	tcpClient.setVerbose(DEBUG);
 
 	//if(useMainThread){
-    ofAddListener(ofEvents.draw, this, &mpeClientTCP::draw);
+    ofAddListener(ofEvents().draw, this, &mpeClientTCP::draw);
 	//}
 
     if (!simulationMode && !tcpClient.setup(hostName, serverPort)) {
         err("TCP failed to connect to port " + ofToString(serverPort));
 		lastConnectionAttempt = ofGetElapsedTimef();
-		ofAddListener(ofEvents.update, this, &mpeClientTCP::retryConnectionLoop);
+		ofAddListener(ofEvents().update, this, &mpeClientTCP::retryConnectionLoop);
     }
 	else{
 		startThread(true, false);  // blocking, verbose
@@ -70,7 +70,7 @@ void mpeClientTCP::retryConnectionLoop(ofEventArgs& e)
 	if(now - lastConnectionAttempt > 1.0){ //retry every second
 		if(tcpClient.setup(hostName, serverPort)) {
 			//cout << "retry succeeded, removing listener!" << endl;
-			ofRemoveListener(ofEvents.update, this, &mpeClientTCP::retryConnectionLoop);
+			ofRemoveListener(ofEvents().update, this, &mpeClientTCP::retryConnectionLoop);
 			startThread(true, false);  // blocking, verbose
 		}
 		lastConnectionAttempt = now;
@@ -417,8 +417,9 @@ void mpeClientTCP::threadedFunction() {
 		if(!tcpClient.isConnected()){
 			//we lost connection, start the retry loop and kill the thread
 			lastConnectionAttempt = ofGetElapsedTimef();
-			ofAddListener(ofEvents.update, this, &mpeClientTCP::retryConnectionLoop);
-			stopThread(true);
+			ofAddListener(ofEvents().update, this, &mpeClientTCP::retryConnectionLoop);
+			//stopThread();
+			waitForThread();
 			if(useMainThread){
 				shouldReset = true;
 			}
@@ -601,7 +602,7 @@ void mpeClientTCP::stop() {
     out("Quitting.");
     stopThread();
 	if(useMainThread){
-		ofRemoveListener(ofEvents.draw, this, &mpeClientTCP::draw);
+		ofRemoveListener(ofEvents().draw, this, &mpeClientTCP::draw);
 	}
 }
 
