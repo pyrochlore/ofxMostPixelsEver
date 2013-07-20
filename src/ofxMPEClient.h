@@ -89,7 +89,8 @@ class ofxMPEClient : public ofThread {
     void setDefaults();
 
 	bool verbose;
-
+	string delimiter;
+	
     void draw(ofEventArgs& e);
     void retryConnectionLoop(ofEventArgs& e);
 
@@ -100,8 +101,8 @@ class ofxMPEClient : public ofThread {
     void setLocalDimensions(int _lWidth, int _lHeight);
     void setOffsets(int _xOffset, int _yOffset);
 
-    void  log(string _msg);
-    void  error(string _msg);
+    void log(string _msg);
+    void error(string _msg);
 
     void setupViewport();
 

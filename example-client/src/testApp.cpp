@@ -2,16 +2,17 @@
 
 //--------------------------------------------------------------
 void testApp::setup(){
-	lastFrameTime = ofGetElapsedTimef();
-	client.setup("mpe_client_settings.xml", true); //false means you can use backthread
-	client.start();
 	
 	ofSetVerticalSync(true);
 	ofSetFrameRate(60);
+	ofBackground(0);
+
+	lastFrameTime = ofGetElapsedTimef();
+
+	client.setup("mpe_client_settings.xml", true); //false means you can use backthread
+	client.start();
 	
 	ofxMPERegisterEvents(this);
-	
-	ofSetBackgroundAuto(false);
 }
 
 //--------------------------------------------------------------
@@ -26,12 +27,7 @@ void testApp::draw(){
 //--------------------------------------------------------------
 void testApp::mpeFrameEvent(ofxMPEEventArgs& event)
 {
-	ofClear(0, 0, 0, 0);
-	
-	ofColor bg = ofColor(client.getFrameCount()*10 % 255);
-	ofSetColor(bg);
-	
-	ofRect(0, 0, ofGetWidth(), ofGetHeight());
+	ofDrawBitmapString( ofToString(event.frame), 10, 10);
 	
 	/*
 	float now = ofGetElapsedTimef();

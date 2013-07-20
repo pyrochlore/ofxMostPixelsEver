@@ -274,14 +274,14 @@
 			children = (
 				E76B8DCF13DF3EA60091E482 /* ofxNetwork.h */,
 				E76B8DD013DF3EA60091E482 /* ofxNetworkUtils.h */,
-				E76B8DD113DF3EA60091E482 /* ofxTCPClient.cpp */,
 				E76B8DD213DF3EA60091E482 /* ofxTCPClient.h */,
-				E76B8DD313DF3EA60091E482 /* ofxTCPManager.cpp */,
+				E76B8DD113DF3EA60091E482 /* ofxTCPClient.cpp */,
 				E76B8DD413DF3EA60091E482 /* ofxTCPManager.h */,
-				E76B8DD513DF3EA60091E482 /* ofxTCPServer.cpp */,
+				E76B8DD313DF3EA60091E482 /* ofxTCPManager.cpp */,
 				E76B8DD613DF3EA60091E482 /* ofxTCPServer.h */,
-				E76B8DD713DF3EA60091E482 /* ofxUDPManager.cpp */,
+				E76B8DD513DF3EA60091E482 /* ofxTCPServer.cpp */,
 				E76B8DD813DF3EA60091E482 /* ofxUDPManager.h */,
+				E76B8DD713DF3EA60091E482 /* ofxUDPManager.cpp */,
 			);
 			path = src;
 			sourceTree = "<group>";

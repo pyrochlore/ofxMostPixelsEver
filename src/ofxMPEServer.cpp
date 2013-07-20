@@ -22,8 +22,7 @@ ofxMPEServer::ofxMPEServer()
 {
 	allconnected = false;
 	framerate = 30;
-	numExpectedClients = 0;
-	numConnectedClients = 0;
+	numRequiredClients = 0;
 	currentFrame = 0;
 	shouldTriggerFrame = false;
 	running = false;
@@ -67,23 +66,16 @@ void ofxMPEServer::setup(int fps, int port, int numClients, bool waitForAll, boo
 	//make sure framerate is fast as it can go
 
 	this->verbose = verbose;
+	//TODO: support
 	shouldWaitForAllClients = waitForAll;
 	
 	if(!server.setup(port, false)){
 		ofLog(OF_LOG_ERROR, "MPE Serever :: Setup failed");
 	}
-	numExpectedClients = numClients;
+	
+	numRequiredClients = numClients;
 	framerate = fps;
 
-	for(int i = 0; i < numExpectedClients; i++){
-		Connection c;
-		c.started = false;
-		c.ready = false;
-		c.name = "noname";
-		connections.push_back(c);
-	}
-
-	
 	shouldTriggerFrame = false;
 	allconnected = false;
 	lastFrameTriggeredTime = 0;
@@ -94,50 +86,12 @@ void ofxMPEServer::setup(int fps, int port, int numClients, bool waitForAll, boo
 	cout << "Setting up server with FPS " << fps << " on port " << port << " with clients " << numClients << endl;
 }
 
-
-//void ofxMPEServer::update(ofEventArgs& args)
-//{
-//	if(!server.isConnected()){
-//		ofLog(OF_LOG_ERROR, "MPE Server :: Server Disconnected");
-//	}
-//	if(lock()){
-
-//		if(shouldTriggerFrame){
-//			float now = ofGetElapsedTimef();
-//			float elapsed = (now - lastFrameTriggeredTime);
-//	//		cout << "should trigger frame!" << endl;
-//
-//			if(elapsed >= 1.0/framerate){
-//
-//	//			cout << "triggered frame with framerate error of " << fabs( elapsed - 1.0/framerate)  << endl;
-//
-//				string message = "G,"+ofToString(currentFrame);
-//				if (newMessage){
-//					message += currentMessage;
-//					newMessage = false;
-//					currentMessage = "";
-//				}
-//
-//				//TODO append message
-//				server.sendToAll(message);
-//
-//				for(int i = 0; i < connections.size(); i++){
-//					connections[i].ready = false;
-//				}
-//
-//				shouldTriggerFrame = false;
-//				lastFrameTriggeredTime = now;
-//				currentFrame++;
-//			}
-//		}
-
-//		unlock();
-//	}
-//}
-
 void ofxMPEServer::reset()
 {
+	//client already connected, must have reset...
+	allconnected = false;
 	currentFrame = 0;
+	currentMessage = "";
 	shouldTriggerFrame = false;
 	server.sendToAll("R");
 }
@@ -154,51 +108,37 @@ void ofxMPEServer::threadedFunction()
 
 			if(elapsed >= 1.0/framerate){
 
-				//cout << "triggered frame with framerate error of " << fabs( elapsed - 1.0/framerate)  << endl;
+				cout << "triggered frame with framerate error of " << fabs( elapsed - 1.0/framerate)  << endl;
 
 				string message = "G"+delimiter+ofToString(currentFrame);
-				if (newMessage){
+				if (currentMessage != ""){
 					message += currentMessage;
-					newMessage = false;
 					currentMessage = "";
 				}
 
+				//TODO: per-client messaging
 				server.sendToAll(message);
-
-				for(int i = 0; i < connections.size(); i++){
-					connections[i].ready = false;
+				
+				map<int, Connection>::iterator it;
+				for(it = connections.begin(); it != connections.end(); it++){
+					it->second.ready = false;
 				}
 
 				shouldTriggerFrame = false;
 				lastFrameTriggeredTime = now;
-				currentFrame++;
 			}
 		}
 		else {
 
 			//check for dead clients
-			bool lostConnection = false;
-			for(int c = 0; c < numExpectedClients; c++){
-				if(connections[c].started && !server.isClientConnected(connections[c].tcpServerIndex)){
-					connections[c].started = false;
-					lostConnection = true;
+			map<int, Connection>::iterator it;
+			for(it = connections.begin(); it != connections.end(); it++){
+				Connection& connection = it->second;
+				if(!connection.disconnected && !server.isClientConnected(connection.tcpServerIndex)){
+					cout << "LOST CONNECTION TO CLIENT " << connection.id << endl;
+					connection.disconnected = true;
 				}
 			}
-
-			if(allconnected && lostConnection){
-
-				ofLog(OF_LOG_NOTICE, "MPE :: Client Disconnected -- RESET");
-
-				//oops someone left
-				printClientStatus();
-				currentFrame = 0;
-				shouldTriggerFrame = false;
-				allconnected = false;
-
-				server.sendToAll("R");
-			}
-
-			//cout << "All clients are connected! " << endl;
 
 			for(int i = 0; i < server.getLastID(); i++){
 				
@@ -207,108 +147,145 @@ void ofxMPEServer::threadedFunction()
 				}
 				
 				string response = server.receive(i);
-
 				if(response == ""){
 					continue;
 				}
 
+				vector<string> splitResponse = ofSplitString(response, delimiter, true,true);
+				if(splitResponse[0].length() != 1){
+					ofLogError() << "MostPixelsEver response code is not valid " << splitResponse[0];
+					continue;
+				}
 	//			cout << "received a response " << response << endl;
-
-				char first = response.at(0);
-				if(first == 'A'){
-					//Listener connected
-					listeners.push_back(i);
-				}
-				else if(first == 'S'){
-					//that's the start!
-					int clientID = ofToInt(response.substr(1,1));
-					if(clientID < numExpectedClients){
-						vector<string> info = ofSplitString(response, ",", true, true);
-						if(connections[clientID].started && currentFrame != 0){
-							//client already started, must have reset...
-							allconnected = false;
-							currentFrame = 0;
-							shouldTriggerFrame = false;
-							server.sendToAll("R");
-						}
-
-						connections[clientID].tcpServerIndex = i;
-						connections[clientID].started = true;
-						connections[clientID].name = info[1];
-						cout << "Client ID " << clientID << " with response " << response << endl;
-						//TODO: parse name
-						printClientStatus();
+				string messageCode = splitResponse[0];
+				if(splitResponse[0] == "S"){
+				
+					if(splitResponse.size() != 3){
+						ofLogError() << "MostPixelsEver Wrong number of arguments for asynchronous connection. Format is S|ID#|Name " << response;
+						continue;
 					}
-					else{
-						ofLog(OF_LOG_ERROR, "Received Client ID " + ofToString(clientID)  + " out of range");
+					
+					Connection c;
+					c.asynchronous = false;
+					c.id = ofToInt(splitResponse[1]);
+					
+					if(allconnected && connections.find(c.id) != connections.end() &&
+					   connections[c.id].disconnected &&
+					   currentFrame != 0)
+					{
+						reset();
 					}
+					
+					c.name = splitResponse[2];
+					c.receiveMessages = true;
+					c.ready = false;
+					c.disconnected = false;
+					c.tcpServerIndex = i;
+					
+
+					connections[c.id] = c;
+				
+					printClientStatus();
+
 				}
-				else if(first == 'D'){
+				else if(splitResponse[0] == "A"){
+					
+					if(splitResponse.size() < 3){
+						ofLogError() << "MostPixelsEver Wrong number of arguments for asynchronous connection. Format is A|ID#|Name|RecieveMessages " << response;
+						continue;
+					}
+					
+					Connection c;
+					c.asynchronous = true;
+					c.ready = false;
+					
+					c.id = ofToInt(splitResponse[1]);
+					c.name = splitResponse[2];
+					c.receiveMessages = splitResponse.size() > 3 && ofToLower(splitResponse[3]) == "true";
+					c.tcpServerIndex = i;
+					
+					connections[c.id] = c;
+				}
+				else if(splitResponse[0] == "T"){
+					
+					//TODO: per-client messages
+					currentMessage += delimiter + splitResponse[1];
+					
+				}
+				else if(splitResponse[0] == "D"){
+
 
 					if(!allconnected){
 						continue;
 					}
-
-					vector<string> info = ofSplitString(response, delimiter, true, true);
-					if(info.size() >= 3){
-						int clientID = ofToInt(info[1]);
-						int fc = ofToInt(info[2]);
-						if(fc == currentFrame){
-							//todo validate client id
-							connections[clientID].ready = true;
-							//cout << " client " << clientID << " is ready " << endl;
-						}
-						if(info.size() > 3){
-							newMessage = true;
-							for(int i = 3; i < info.size(); i++){
-								currentMessage += delimiter + info[i];
-							}
-							//cout << "NEW FORMAT :: MESSSAGE IS " << currentMessage << endl;
-						}
+					
+					if(splitResponse.size() < 3){
+						ofLogError() << "MostPixelsEver Wrong number of arguments for Done. Format is D|ID#|Frame# .  " << response;
+						return;
 					}
-					else {
-						ofLog(OF_LOG_ERROR, "MPE Server :: Response String " + response + " Invalid size");
-					}
+					
+					int clientID = ofToInt(splitResponse[1]);
+					int frameNumber = ofToInt(splitResponse[2]);
+					cout << "Received DONE signal from client " << clientID << " client frame num " <<  frameNumber << " server frame num " << currentFrame << endl;
+					if(frameNumber == currentFrame){
+						//TODO: validate client id
+						connections[clientID].ready = true;
+					}					
 				}
 			}
 
+			//if we are still waiting for everyone to be connected check to see if we are all here...
 			if(!allconnected){
-				allconnected = true;
-				for(int c = 0; c < connections.size(); c++){
-					if(!connections[c].started){
-						allconnected = false;
-						break;
+				int numConnected = 0;
+				map<int, Connection>::iterator it;				
+				for(it = connections.begin(); it != connections.end(); it++){
+					Connection& connection = it->second;
+					if( !connection.asynchronous ){
+						numConnected++;
 					}
 				}
-				if(allconnected){
-					shouldTriggerFrame = true;
+				
+				//we are all here! trigger the first frame
+				if(numConnected == numRequiredClients){
+					allconnected = true;
+					shouldTriggerFrame = true;					
 					cout << "All clients connected!" << endl;
 				}
 			}
-			//All connected and going
+			//All connected and going, see if we are ready for the next frame
 			else {
 				bool allready = true;
-				for(int c = 0; c < connections.size(); c++){
-					if(!connections[c].ready){
+				map<int, Connection>::iterator it;
+				for(it = connections.begin(); it != connections.end(); it++){
+					Connection& connection = it->second;
+					if(!connection.asynchronous && !connection.ready){
 						allready = false;
 						break;
 					}
 				}
+				
+				//all clients reported in, next frame!
 				if(allready){
+					cout << "All clients Ready!" << endl;
 					shouldTriggerFrame = true;
+					currentFrame++;					
 				}
 			}
 		}
-		ofSleepMillis(5);
+		ofSleepMillis(1);
 	}//end while
 }
 
 void ofxMPEServer::printClientStatus() {
 
 	ofLog(OF_LOG_NOTICE, "MPE Client Status:");
-	ofLog(OF_LOG_NOTICE, "  Expecting " + ofToString(numExpectedClients) + " Clients");
-	for(int i = 0; i < connections.size(); i++){
-		ofLog(OF_LOG_NOTICE, "  Client (" + ofToString(i) + ") " + connections[i].name + " connected? " + (connections[i].started ? "yes" : "no") );
+	ofLog(OF_LOG_NOTICE, "  Requiring " + ofToString(numRequiredClients) + " Clients");
+
+	map<int, Connection>::iterator it;
+	for(it = connections.begin(); it != connections.end(); it++){
+		ofLogNotice() << (it->second.asynchronous ? "synchronous " : "asynchronous ") <<
+			" client #: " + ofToString(it->second.id) + ") "
+			<< it->second.name + " server index: " << it->second.tcpServerIndex;
 	}
 }
 

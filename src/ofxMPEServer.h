@@ -23,10 +23,13 @@
 
 typedef struct
 {
-	bool started;
-	bool ready;
 	string name;
+	int id;
 	int tcpServerIndex;
+	bool asynchronous;
+	bool receiveMessages;
+	bool ready;
+	bool disconnected;
 } Connection;
 
 class ofxMPEServer : public ofThread
@@ -45,25 +48,23 @@ class ofxMPEServer : public ofThread
 	void reset(); //sends a reset signal to all clients and reset frame count
 	void close();
 	void printClientStatus();
-
+	
   protected:
 	ofxTCPServer server;
 	void threadedFunction();
-
+	
 	string delimiter;
 	float lastFrameTriggeredTime;
 	bool shouldWaitForAllClients;
 	bool allconnected;
 	bool running;
 	int framerate;
-	int numExpectedClients;
-	int numConnectedClients;
+	int numRequiredClients;
 	int currentFrame;
 	bool shouldTriggerFrame;
 	bool verbose;
 
-	vector<Connection> connections;
-	vector<int> listeners;
+	map<int, Connection> connections;
 	bool newMessage;
 	string currentMessage;
 	float timeOfNextHeartbeat;

@@ -242,8 +242,8 @@
 				E76B8E4C13DF3F720091E482 /* ofxMPEClient.cpp */,
 				E76B8E4F13DF3F720091E482 /* ofxMPEEvents.h */,
 				E76B8E4E13DF3F720091E482 /* ofxMPEEvents.cpp */,
-				E76B8E5013DF3F720091E482 /* ofxMPEServer.cpp */,
 				E76B8E5113DF3F720091E482 /* ofxMPEServer.h */,
+				E76B8E5013DF3F720091E482 /* ofxMPEServer.cpp */,
 				E76B8E5213DF3F720091E482 /* ofxMostPixelsEver.h */,
 			);
 			name = src;
