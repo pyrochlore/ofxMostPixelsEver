@@ -27,10 +27,6 @@ class ofxMPEEventArgs : public ofEventArgs
   public:
     int frame;
     string message;
-	//TODO:
-//	vector<char> bytes;
-//	vector<int> ints;
-//	vector<float> floats;
 };
 
 class ofxMPECoreEvents
@@ -39,10 +35,6 @@ class ofxMPECoreEvents
     ofEvent<ofxMPEEventArgs> mpeFrame;	
   	ofEvent<ofxMPEEventArgs> mpeMessage;
 	ofEvent<ofxMPEEventArgs> mpeReset; //reset everything, used when the client or server goes down
-	//TODO:
-//	ofEvent<ofxMPEEventArgs> mpeInts;
-//	ofEvent<ofxMPEEventArgs> mpeBytes;
-//	ofEvent<ofxMPEEventArgs> mpeFloats;
 };
 
 extern ofxMPECoreEvents ofxMPEEvents;
@@ -53,10 +45,6 @@ void ofxMPERegisterEvents(ListenerClass * listener){
     ofAddListener(ofxMPEEvents.mpeMessage, listener, &ListenerClass::mpeMessageEvent);
     ofAddListener(ofxMPEEvents.mpeReset, listener, &ListenerClass::mpeResetEvent);
 	
-	//TODO:	
-//	ofAddListener(ofxMPEEvents.mpeBytes, listener, &ListenerClass::mpeByteEvent);
-//	ofAddListener(ofxMPEEvents.mpeInts, listener, &ListenerClass::mpeIntEvent);
-//	ofAddListener(ofxMPEEvents.mpeFloats, listener, &ListenerClass::mpeIntEvent);
 }
 
 

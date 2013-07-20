@@ -23,13 +23,11 @@
 #include "ofxXmlSettings.h"
 
 
-//TODO: Add of log levels rather than "out"
-
 //--------------------------------------------------------------
-class mpeClientTCP : public ofThread {
+class ofxMPEClient : public ofThread {
 
   public:
-	mpeClientTCP();
+	ofxMPEClient();
 
 	//must call this before calling setup and it will work offline
 	void  useSimulationMode(int framesPerSecond); //will work offline

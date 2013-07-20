@@ -10,11 +10,9 @@
  *  Extended by James George on 5/17/11 @ Flightphase for the National Maritime Museum
  *
  *  Still need to convert the original examples to the new format
- * 
- *  There is a drawback that this is not compatible with the Java MPE jar, the connections must go OF client to OF Server
  *
  */
 
-#include "mpeEvents.h"
+#include "ofxMPEEvents.h"
 
 ofxMPECoreEvents ofxMPEEvents;

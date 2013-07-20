@@ -17,6 +17,6 @@
 
 #pragma once
 
-#include "mpeClientTCP.h"
-#include "mpeServerTCP.h"
-#include "mpeEvents.h"
+#include "ofxMPEServer.h"
+#include "ofxMPEClient.h"
+#include "ofxMPEEvents.h"

@@ -28,11 +28,11 @@ typedef struct
 	int tcpServerIndex;
 } Connection;
 
-class mpeServerTCP : public ofThread
+class ofxMPEServer : public ofThread
 {
   public:
-	mpeServerTCP();
-	~mpeServerTCP();
+	ofxMPEServer();
+	~ofxMPEServer();
 
 	void setup(string setupFile);
 	void setup(int framerate, int port, int numClients);

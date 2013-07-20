@@ -20,7 +20,7 @@ class testApp : public ofBaseApp{
 	void dragEvent(ofDragInfo dragInfo);
 	void gotMessage(ofMessage msg);
 	
-	mpeClientTCP client;
+	ofxMPEClient client;
 	
 	void mpeFrameEvent(ofxMPEEventArgs& event);
 	void mpeMessageEvent(ofxMPEEventArgs& event);

@@ -15,10 +15,10 @@
  *
  */
 
-#include "mpeServerTCP.h"
+#include "ofxMPEServer.h"
 #include "ofxXmlSettings.h"
 
-mpeServerTCP::mpeServerTCP()
+ofxMPEServer::ofxMPEServer()
 {
 	allconnected = false;
 	framerate = 30;
@@ -34,12 +34,12 @@ mpeServerTCP::mpeServerTCP()
 
 }
 
-mpeServerTCP::~mpeServerTCP()
+ofxMPEServer::~ofxMPEServer()
 {
 	close();
 }
 
-void mpeServerTCP::setup(string settingsFile)
+void ofxMPEServer::setup(string settingsFile)
 {
 
 	ofxXmlSettings settings;
@@ -53,7 +53,7 @@ void mpeServerTCP::setup(string settingsFile)
 		  settings.getValue("settings:numclients", 2, 0));
 }
 
-void mpeServerTCP::setup(int fps, int port, int numClients)
+void ofxMPEServer::setup(int fps, int port, int numClients)
 {
 
 	close(); // in case of double set up
@@ -82,13 +82,13 @@ void mpeServerTCP::setup(int fps, int port, int numClients)
 	lastFrameTriggeredTime = 0;
 	currentFrame = 0;
 
-	//ofAddListener(ofEvents.update, this, &mpeServerTCP::update);
+	//ofAddListener(ofEvents.update, this, &ofxMPEServer::update);
 
 	cout << "Setting up server with FPS " << fps << " on port " << port << " with clients " << numClients << endl;
 }
 
 
-void mpeServerTCP::update(ofEventArgs& args)
+void ofxMPEServer::update(ofEventArgs& args)
 {
 //	if(!server.isConnected()){
 //		ofLog(OF_LOG_ERROR, "MPE Server :: Server Disconnected");
@@ -129,7 +129,7 @@ void mpeServerTCP::update(ofEventArgs& args)
 }
 
 
-void mpeServerTCP::reset()
+void ofxMPEServer::reset()
 {
 	currentFrame = 0;
 	shouldTriggerFrame = false;
@@ -137,7 +137,7 @@ void mpeServerTCP::reset()
 
 }
 
-void mpeServerTCP::threadedFunction()
+void ofxMPEServer::threadedFunction()
 {
 	while(isThreadRunning()){
 
@@ -298,7 +298,7 @@ void mpeServerTCP::threadedFunction()
 	}//end while
 }
 
-void mpeServerTCP::printClientStatus()
+void ofxMPEServer::printClientStatus()
 {
     ofLog(OF_LOG_NOTICE, "MPE Client Status:");
     ofLog(OF_LOG_NOTICE, "  Expecting " + ofToString(numExpectedClients) + " Clients");
@@ -307,11 +307,11 @@ void mpeServerTCP::printClientStatus()
     }
 }
 
-void mpeServerTCP::close()
+void ofxMPEServer::close()
 {
 	if(!running) return;
 
-	ofRemoveListener(ofEvents().update, this, &mpeServerTCP::update);
+	ofRemoveListener(ofEvents().update, this, &ofxMPEServer::update);
 
 	cout << " closing MPE Server " << endl;
 

@@ -15,16 +15,16 @@
  *
  */
 
-#include "mpeClientTCP.h"
-#include "mpeEvents.h"
+#include "ofxMPEClient.h"
+#include "ofxMPEEvents.h"
 
 //--------------------------------------------------------------
-mpeClientTCP::mpeClientTCP() {
+ofxMPEClient::ofxMPEClient() {
     setDefaults();
 }
 
 //--------------------------------------------------------------
-void mpeClientTCP::setup(string _fileString, bool updateOnMainThread) {
+void ofxMPEClient::setup(string _fileString, bool updateOnMainThread) {
 
 	useMainThread = updateOnMainThread;
 
@@ -37,7 +37,7 @@ void mpeClientTCP::setup(string _fileString, bool updateOnMainThread) {
 }
 
 //will work offline
-void  mpeClientTCP::useSimulationMode(int framesPerSecond)
+void  ofxMPEClient::useSimulationMode(int framesPerSecond)
 {
 	simulatedFPS = framesPerSecond;
 	simulationMode = true;
@@ -45,18 +45,18 @@ void  mpeClientTCP::useSimulationMode(int framesPerSecond)
 }
 
 //--------------------------------------------------------------
-void mpeClientTCP::start() {
+void ofxMPEClient::start() {
 
 	tcpClient.setVerbose(DEBUG);
 
 	//if(useMainThread){
-    ofAddListener(ofEvents().draw, this, &mpeClientTCP::draw);
+    ofAddListener(ofEvents().draw, this, &ofxMPEClient::draw);
 	//}
 
     if (!simulationMode && !tcpClient.setup(hostName, serverPort)) {
         err("TCP failed to connect to port " + ofToString(serverPort));
 		lastConnectionAttempt = ofGetElapsedTimef();
-		ofAddListener(ofEvents().update, this, &mpeClientTCP::retryConnectionLoop);
+		ofAddListener(ofEvents().update, this, &ofxMPEClient::retryConnectionLoop);
     }
 	else{
 		startThread(true, false);  // blocking, verbose
@@ -64,20 +64,20 @@ void mpeClientTCP::start() {
 	}
 }
 
-void mpeClientTCP::retryConnectionLoop(ofEventArgs& e)
+void ofxMPEClient::retryConnectionLoop(ofEventArgs& e)
 {
 	float now = ofGetElapsedTimef();
 	if(now - lastConnectionAttempt > 1.0){ //retry every second
 		if(tcpClient.setup(hostName, serverPort)) {
 			//cout << "retry succeeded, removing listener!" << endl;
-			ofRemoveListener(ofEvents().update, this, &mpeClientTCP::retryConnectionLoop);
+			ofRemoveListener(ofEvents().update, this, &ofxMPEClient::retryConnectionLoop);
 			startThread(true, false);  // blocking, verbose
 		}
 		lastConnectionAttempt = now;
 	}
 }
 
-void mpeClientTCP::draw(ofEventArgs& e)
+void ofxMPEClient::draw(ofEventArgs& e)
 {
     //no blocking
     if(useMainThread && lock()) {
@@ -127,7 +127,7 @@ void mpeClientTCP::draw(ofEventArgs& e)
 //--------------------------------------------------------------
 // Loads the settings from the Client XML file.
 //--------------------------------------------------------------
-void mpeClientTCP::loadIniFile(string _fileString) {
+void ofxMPEClient::loadIniFile(string _fileString) {
 	out("Loading settings from file " + _fileString);
 
 	ofxXmlSettings xmlReader;
@@ -179,7 +179,7 @@ void mpeClientTCP::loadIniFile(string _fileString) {
         + ", location = " + ofToString(xOffset) + ", " + ofToString(yOffset));
 }
 
-void mpeClientTCP::setupViewport()
+void ofxMPEClient::setupViewport()
 {
 	if (goFullScreen){
 		ofSetFullscreen(true);
@@ -190,7 +190,7 @@ void mpeClientTCP::setupViewport()
 	}
 }
 
-bool mpeClientTCP::isConnected()
+bool ofxMPEClient::isConnected()
 {
     return tcpClient.isConnected();
 }
@@ -198,7 +198,7 @@ bool mpeClientTCP::isConnected()
 //--------------------------------------------------------------
 // Sets the dimensions for the local display.
 //--------------------------------------------------------------
-void mpeClientTCP::setLocalDimensions(int _lWidth, int _lHeight) {
+void ofxMPEClient::setLocalDimensions(int _lWidth, int _lHeight) {
     if (_lWidth > -1 && _lHeight > -1) {
         lWidth = _lWidth;
         lHeight = _lHeight;
@@ -208,7 +208,7 @@ void mpeClientTCP::setLocalDimensions(int _lWidth, int _lHeight) {
 //--------------------------------------------------------------
 // Sets the offsets for the local display.
 //--------------------------------------------------------------
-void mpeClientTCP::setOffsets(int _xOffset, int _yOffset) {
+void ofxMPEClient::setOffsets(int _xOffset, int _yOffset) {
     if (_xOffset > -1 && _yOffset > -1) {
         xOffset = _xOffset;
         yOffset = _yOffset;
@@ -226,7 +226,7 @@ void mpeClientTCP::setOffsets(int _xOffset, int _yOffset) {
 //  client 0: setLocalDimensions(0, 0, 110, 100);
 //  client 1: setLocalDimensions(90, 0, 110, 100);
 //--------------------------------------------------------------
-void mpeClientTCP::setLocalDimensions(int _xOffset, int _yOffset, int _lWidth, int _lHeight) {
+void ofxMPEClient::setLocalDimensions(int _xOffset, int _yOffset, int _lWidth, int _lHeight) {
     setOffsets(_xOffset, _yOffset);
     setLocalDimensions(_lWidth, _lHeight);
 }
@@ -235,7 +235,7 @@ void mpeClientTCP::setLocalDimensions(int _xOffset, int _yOffset, int _lWidth, i
 // Sets the master dimensions for the Video Wall.
 // This is used to calculate what is rendered.
 //--------------------------------------------------------------
-void mpeClientTCP::setMasterDimensions(int _mWidth, int _mHeight) {
+void ofxMPEClient::setMasterDimensions(int _mWidth, int _mHeight) {
     if (_mWidth > -1 && _mHeight > -1) {
         mWidth = _mWidth;
         mHeight = _mHeight;
@@ -246,7 +246,7 @@ void mpeClientTCP::setMasterDimensions(int _mWidth, int _mHeight) {
 // Sets the field of view of the camera when rendering in 3D.
 // Note that this has no effect when rendering in 2D.
 //--------------------------------------------------------------
-void mpeClientTCP::setFieldOfView(float val) {
+void ofxMPEClient::setFieldOfView(float val) {
     fieldOfView = val;
     cameraZ = (ofGetHeight() / 2.f) / tanf(M_PI * fieldOfView/360.f);
 }
@@ -256,7 +256,7 @@ void mpeClientTCP::setFieldOfView(float val) {
 // beginning of the render loop.  If you are using Processing, you would
 // typically place it at the beginning of your draw() function.
 //--------------------------------------------------------------
-void mpeClientTCP::placeScreen() {
+void ofxMPEClient::placeScreen() {
     if (bEnable3D) {
         placeScreen3D();
     } else {
@@ -267,14 +267,14 @@ void mpeClientTCP::placeScreen() {
 //--------------------------------------------------------------
 // If you want to enable or disable 3D manually in automode
 //--------------------------------------------------------------
-void mpeClientTCP::enable3D(bool _b) {
+void ofxMPEClient::enable3D(bool _b) {
     bEnable3D = _b;
 }
 
 //--------------------------------------------------------------
 // Places the viewing area for this screen when rendering in 2D.
 //--------------------------------------------------------------
-void mpeClientTCP::placeScreen2D() {
+void ofxMPEClient::placeScreen2D() {
     glTranslatef(xOffset * -1, yOffset * -1, 0);
 }
 
@@ -282,7 +282,7 @@ void mpeClientTCP::placeScreen2D() {
 //--------------------------------------------------------------
 // Restores the viewing area for this screen when rendering in 3D.
 //--------------------------------------------------------------
-void mpeClientTCP::restoreCamera() {
+void ofxMPEClient::restoreCamera() {
     gluLookAt(ofGetWidth()/2.f, ofGetHeight()/2.f, cameraZ,
               ofGetWidth()/2.f, ofGetHeight()/2.f, 0,
               0, 1, 0);
@@ -297,7 +297,7 @@ void mpeClientTCP::restoreCamera() {
 //--------------------------------------------------------------
 // Places the viewing area for this screen when rendering in 3D.
 //--------------------------------------------------------------
-void mpeClientTCP::placeScreen3D() {
+void ofxMPEClient::placeScreen3D() {
     gluLookAt(mWidth/2.f, mHeight/2.f, cameraZ,
               mWidth/2.f, mHeight/2.f, 0,
               0, 1, 0);
@@ -323,7 +323,7 @@ void mpeClientTCP::placeScreen3D() {
 //--------------------------------------------------------------
 // Checks whether the given point is on screen.
 //--------------------------------------------------------------
-bool mpeClientTCP::isOnScreen(float _x, float _y) {
+bool ofxMPEClient::isOnScreen(float _x, float _y) {
     return (_x > xOffset &&
             _x < (xOffset + lWidth) &&
             _y > yOffset &&
@@ -333,7 +333,7 @@ bool mpeClientTCP::isOnScreen(float _x, float _y) {
 //--------------------------------------------------------------
 // Checks whether the given rectangle is on screen.
 //--------------------------------------------------------------
-bool mpeClientTCP::isOnScreen(float _x, float _y, float _w, float _h) {
+bool ofxMPEClient::isOnScreen(float _x, float _y, float _w, float _h) {
     return (isOnScreen(_x, _y) ||
             isOnScreen(_x + _w, _y) ||
             isOnScreen(_x + _w, _y + _h) ||
@@ -343,7 +343,7 @@ bool mpeClientTCP::isOnScreen(float _x, float _y, float _w, float _h) {
 //--------------------------------------------------------------
 // Outputs a message to the console.
 //--------------------------------------------------------------
-void mpeClientTCP::out(string _str) {
+void ofxMPEClient::out(string _str) {
     //print(_str);
 	//cout << _str << endl;
 }
@@ -351,7 +351,7 @@ void mpeClientTCP::out(string _str) {
 //--------------------------------------------------------------
 // Outputs a message to the console.
 //--------------------------------------------------------------
-void mpeClientTCP::print(string _str) {
+void ofxMPEClient::print(string _str) {
     if (DEBUG)
         cout << "mpeClient: " << _str << endl;
 }
@@ -359,13 +359,13 @@ void mpeClientTCP::print(string _str) {
 //--------------------------------------------------------------
 // Outputs an error message to the console.
 //--------------------------------------------------------------
-void mpeClientTCP::err(string _str) {
+void ofxMPEClient::err(string _str) {
     //cerr << "mpeClient: " << _str << endl;
 	ofLog(OF_LOG_ERROR, "MPE Client Error :: " + _str);
 }
 
 //--------------------------------------------------------------
-void mpeClientTCP::threadedFunction() {
+void ofxMPEClient::threadedFunction() {
     out("Running!");
 	
 	lastHeartbeatTime = ofGetElapsedTimef();
@@ -407,17 +407,17 @@ void mpeClientTCP::threadedFunction() {
 		if (allConnected && ofGetElapsedTimef() - lastHeartbeatTime > 2.0) {
 			//we lost connection... manually disconnect and join reset cycle
 			if(tcpClient.close()){
-				ofLog(OF_LOG_ERROR, "mpeClientTCP -- server connection timed out. Closing and entering reconnect loop.");
+				ofLog(OF_LOG_ERROR, "ofxMPEClient -- server connection timed out. Closing and entering reconnect loop.");
 			}
 			else{
-				ofLog(OF_LOG_ERROR, "mpeClientTCP -- Error when closing TCP connection after timeout.");			
+				ofLog(OF_LOG_ERROR, "ofxMPEClient -- Error when closing TCP connection after timeout.");			
 			}
 		}
 		
 		if(!tcpClient.isConnected()){
 			//we lost connection, start the retry loop and kill the thread
 			lastConnectionAttempt = ofGetElapsedTimef();
-			ofAddListener(ofEvents().update, this, &mpeClientTCP::retryConnectionLoop);
+			ofAddListener(ofEvents().update, this, &ofxMPEClient::retryConnectionLoop);
 			//stopThread();
 			waitForThread();
 			if(useMainThread){
@@ -452,7 +452,7 @@ void mpeClientTCP::threadedFunction() {
 //--------------------------------------------------------------
 // Reads and parses a message from the server.
 //--------------------------------------------------------------
-void mpeClientTCP::read(string _serverInput) {
+void ofxMPEClient::read(string _serverInput) {
     out("Receiving: " + _serverInput);
 
     char c = _serverInput.at(0);
@@ -534,7 +534,7 @@ void mpeClientTCP::read(string _serverInput) {
     }
 }
 
-void mpeClientTCP::reset()
+void ofxMPEClient::reset()
 {
 	ofxMPEEventArgs e;
 	e.message = "reset";
@@ -546,7 +546,7 @@ void mpeClientTCP::reset()
 	frameCount = 0;
 }
 
-//void mpeClientTCP::sendPauseEvent()
+//void ofxMPEClient::sendPauseEvent()
 //{
 //	ofxMPEEventArgs e;
 //	e.message = "pause";
@@ -558,7 +558,7 @@ void mpeClientTCP::reset()
 //--------------------------------------------------------------
 // Send a message to the server.
 //--------------------------------------------------------------
-void mpeClientTCP::send(string _msg) {
+void ofxMPEClient::send(string _msg) {
 
     //_msg += "\n";
 	if(!simulationMode && frameLock){
@@ -572,7 +572,7 @@ void mpeClientTCP::send(string _msg) {
 // Format a broadcast message and send it.
 // Do not use a colon ':' in your message!!!
 //--------------------------------------------------------------
-void mpeClientTCP::broadcast(string _msg) {
+void ofxMPEClient::broadcast(string _msg) {
 	if(!simulationMode){
 		outgoingMessage += "," + _msg;
 		//cout << "outgoing message is now " << outgoingMessage << endl;
@@ -584,7 +584,7 @@ void mpeClientTCP::broadcast(string _msg) {
 // the end of the draw loop.
 //--------------------------------------------------------------
 //TODO: if done has already been called, dont call it again
-void mpeClientTCP::done() {
+void ofxMPEClient::done() {
 //    rendering = false;
     string msg = "D," + ofToString(id) + "," + ofToString(frameCount);
 	if(outgoingMessage != ""){
@@ -598,11 +598,11 @@ void mpeClientTCP::done() {
 //--------------------------------------------------------------
 // Stops the client thread.  You don't really need to do this ever.
 //--------------------------------------------------------------
-void mpeClientTCP::stop() {
+void ofxMPEClient::stop() {
     out("Quitting.");
     stopThread();
 	if(useMainThread){
-		ofRemoveListener(ofEvents().draw, this, &mpeClientTCP::draw);
+		ofRemoveListener(ofEvents().draw, this, &ofxMPEClient::draw);
 	}
 }
 

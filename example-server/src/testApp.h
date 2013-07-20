@@ -20,6 +20,6 @@ class testApp : public ofBaseApp{
 	void dragEvent(ofDragInfo dragInfo);
 	void gotMessage(ofMessage msg);
 		
-	mpeServerTCP server;
+	ofxMPEServer server;
 	
 };
