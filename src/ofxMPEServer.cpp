@@ -28,7 +28,10 @@ ofxMPEServer::ofxMPEServer()
 	shouldTriggerFrame = false;
 	running = false;
 	newMessage = false;
-
+	verbose = false;
+	delimiter = "|";
+	
+	//TODO: heart beats
 	timeOfNextHeartbeat = ofGetElapsedTimef();
 	heartBeatInterval = 2.0;
 
@@ -48,12 +51,14 @@ void ofxMPEServer::setup(string settingsFile)
 		return;
 	}
 
-	setup(settings.getValue("settings:framerate", 30, 0),
-		  settings.getValue("settings:port", 9001, 0),
-		  settings.getValue("settings:numclients", 2, 0));
+	setup(settings.getValue("settings:framerate", 30),
+		  settings.getValue("settings:port", 9001),
+		  settings.getValue("settings:numclients", 2),
+		  settings.getValue("settings:waitForAll", true),
+		  settings.getValue("settings:verbose", false));
 }
 
-void ofxMPEServer::setup(int fps, int port, int numClients)
+void ofxMPEServer::setup(int fps, int port, int numClients, bool waitForAll, bool verbose)
 {
 
 	close(); // in case of double set up
@@ -61,6 +66,9 @@ void ofxMPEServer::setup(int fps, int port, int numClients)
 	//make sure vsync is OFF
 	//make sure framerate is fast as it can go
 
+	this->verbose = verbose;
+	shouldWaitForAllClients = waitForAll;
+	
 	if(!server.setup(port, false)){
 		ofLog(OF_LOG_ERROR, "MPE Serever :: Setup failed");
 	}
@@ -75,21 +83,20 @@ void ofxMPEServer::setup(int fps, int port, int numClients)
 		connections.push_back(c);
 	}
 
-	startThread(true, false);
-
+	
 	shouldTriggerFrame = false;
 	allconnected = false;
 	lastFrameTriggeredTime = 0;
 	currentFrame = 0;
 
-	//ofAddListener(ofEvents.update, this, &ofxMPEServer::update);
+	startThread(true, false);
 
 	cout << "Setting up server with FPS " << fps << " on port " << port << " with clients " << numClients << endl;
 }
 
 
-void ofxMPEServer::update(ofEventArgs& args)
-{
+//void ofxMPEServer::update(ofEventArgs& args)
+//{
 //	if(!server.isConnected()){
 //		ofLog(OF_LOG_ERROR, "MPE Server :: Server Disconnected");
 //	}
@@ -126,15 +133,13 @@ void ofxMPEServer::update(ofEventArgs& args)
 
 //		unlock();
 //	}
-}
-
+//}
 
 void ofxMPEServer::reset()
 {
 	currentFrame = 0;
 	shouldTriggerFrame = false;
 	server.sendToAll("R");
-
 }
 
 void ofxMPEServer::threadedFunction()
@@ -151,7 +156,7 @@ void ofxMPEServer::threadedFunction()
 
 				//cout << "triggered frame with framerate error of " << fabs( elapsed - 1.0/framerate)  << endl;
 
-				string message = "G,"+ofToString(currentFrame);
+				string message = "G"+delimiter+ofToString(currentFrame);
 				if (newMessage){
 					message += currentMessage;
 					newMessage = false;
@@ -210,7 +215,7 @@ void ofxMPEServer::threadedFunction()
 	//			cout << "received a response " << response << endl;
 
 				char first = response.at(0);
-				if(first == 'L'){
+				if(first == 'A'){
 					//Listener connected
 					listeners.push_back(i);
 				}
@@ -244,7 +249,7 @@ void ofxMPEServer::threadedFunction()
 						continue;
 					}
 
-					vector<string> info = ofSplitString(response, ",", true, true);
+					vector<string> info = ofSplitString(response, delimiter, true, true);
 					if(info.size() >= 3){
 						int clientID = ofToInt(info[1]);
 						int fc = ofToInt(info[2]);
@@ -256,7 +261,7 @@ void ofxMPEServer::threadedFunction()
 						if(info.size() > 3){
 							newMessage = true;
 							for(int i = 3; i < info.size(); i++){
-								currentMessage += ":" + info[i];
+								currentMessage += delimiter + info[i];
 							}
 							//cout << "NEW FORMAT :: MESSSAGE IS " << currentMessage << endl;
 						}
@@ -298,8 +303,8 @@ void ofxMPEServer::threadedFunction()
 	}//end while
 }
 
-void ofxMPEServer::printClientStatus()
-{
+void ofxMPEServer::printClientStatus() {
+
 	ofLog(OF_LOG_NOTICE, "MPE Client Status:");
 	ofLog(OF_LOG_NOTICE, "  Expecting " + ofToString(numExpectedClients) + " Clients");
 	for(int i = 0; i < connections.size(); i++){
@@ -311,8 +316,6 @@ void ofxMPEServer::close()
 {
 	if(!running) return;
 
-	ofRemoveListener(ofEvents().update, this, &ofxMPEServer::update);
-
 	cout << " closing MPE Server " << endl;
 
 	if(server.isConnected()){
@@ -321,7 +324,8 @@ void ofxMPEServer::close()
 
 	connections.clear();
 
-	stopThread();
-
+	//stopThread();
+	waitForThread(true);
+	
 	running = false;
 }

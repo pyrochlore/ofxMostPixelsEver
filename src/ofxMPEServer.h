@@ -20,6 +20,7 @@
 #include "ofMain.h"
 #include "ofxNetwork.h"
 
+
 typedef struct
 {
 	bool started;
@@ -35,17 +36,23 @@ class ofxMPEServer : public ofThread
 	~ofxMPEServer();
 
 	void setup(string setupFile);
-	void setup(int framerate, int port, int numClients);
+	void setup(int framerate = 30,
+			   int port = 9001,
+			   int numClients = 1,
+			   bool waitForAll = true,
+			   bool verbose = false);
+	
 	void reset(); //sends a reset signal to all clients and reset frame count
 	void close();
 	void printClientStatus();
 
   protected:
 	ofxTCPServer server;
-	void update(ofEventArgs& args);
 	void threadedFunction();
 
+	string delimiter;
 	float lastFrameTriggeredTime;
+	bool shouldWaitForAllClients;
 	bool allconnected;
 	bool running;
 	int framerate;
@@ -53,6 +60,8 @@ class ofxMPEServer : public ofThread
 	int numConnectedClients;
 	int currentFrame;
 	bool shouldTriggerFrame;
+	bool verbose;
+
 	vector<Connection> connections;
 	vector<int> listeners;
 	bool newMessage;

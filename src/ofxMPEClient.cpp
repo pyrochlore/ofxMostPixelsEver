@@ -24,6 +24,47 @@ ofxMPEClient::ofxMPEClient() {
 }
 
 //--------------------------------------------------------------
+void ofxMPEClient::setDefaults(){
+	verbose = true;
+	frameLock = true;
+	
+	id = 0;
+	mWidth  = -1;
+	mHeight = -1;
+	lWidth  = 640;
+	lHeight = 480;
+	xOffset = 0;
+	yOffset = 0;
+	
+	retryConnection = true;
+	triggerFrame = false;
+	
+	lastConnectionAttempt = 0;
+	isAttemptingToConnect = false;
+	simulationMode = false;
+	
+	frameCount = 0;
+	fps        = 0.0f;
+	lastMs     = 0;
+	
+	allConnected = false;
+	lastHeartbeatTime = 0.0;
+	
+	outgoingMessage = "";
+	
+	lastmsg = "";
+	
+	goFullScreen = false;
+	offsetWindow = false;
+	
+	bEnable3D    = false;
+	fieldOfView = 30.f;
+	
+	clientName = "noname";
+	
+}
+
+//--------------------------------------------------------------
 void ofxMPEClient::setup(string _fileString, bool updateOnMainThread) {
 
     useMainThread = updateOnMainThread;
@@ -37,8 +78,7 @@ void ofxMPEClient::setup(string _fileString, bool updateOnMainThread) {
 }
 
 //will work offline
-void  ofxMPEClient::useSimulationMode(int framesPerSecond)
-{
+void  ofxMPEClient::useSimulationMode(int framesPerSecond) {
     simulatedFPS = framesPerSecond;
     simulationMode = true;
     lastFrameTime = ofGetElapsedTimef();
@@ -47,20 +87,18 @@ void  ofxMPEClient::useSimulationMode(int framesPerSecond)
 //--------------------------------------------------------------
 void ofxMPEClient::start() {
 
-    tcpClient.setVerbose(DEBUG);
+    tcpClient.setVerbose(verbose);
 
-    //if(useMainThread){
     ofAddListener(ofEvents().draw, this, &ofxMPEClient::draw);
-    //}
 
     if (!simulationMode && !tcpClient.setup(hostName, serverPort)) {
-        err("TCP failed to connect to port " + ofToString(serverPort));
+        error("TCP failed to connect to port " + ofToString(serverPort));
         lastConnectionAttempt = ofGetElapsedTimef();
         ofAddListener(ofEvents().update, this, &ofxMPEClient::retryConnectionLoop);
     }
     else{
         startThread(true, false);  // blocking, verbose
-        out("TCP connection bound on port " + ofToString(serverPort));
+        log("TCP connection bound on port " + ofToString(serverPort));
     }
 }
 
@@ -91,8 +129,6 @@ void ofxMPEClient::draw(ofEventArgs& e)
             ofNotifyEvent(ofxMPEEvents.mpeMessage, e);
         }
         dataMessage.clear();
-
-        //TODO: ints, floats, bytes,
 
         if(shouldReset){
             reset();
@@ -128,11 +164,11 @@ void ofxMPEClient::draw(ofEventArgs& e)
 // Loads the settings from the Client XML file.
 //--------------------------------------------------------------
 void ofxMPEClient::loadIniFile(string _fileString) {
-    out("Loading settings from file " + _fileString);
+    log("Loading settings from file " + _fileString);
     
     ofxXmlSettings xmlReader;
     if (!xmlReader.loadFile(_fileString)){
-        err("ERROR loading XML file!");
+        error("ERROR loading XML file!");
         return;
     }
 
@@ -166,7 +202,7 @@ void ofxMPEClient::loadIniFile(string _fileString) {
     setupViewport();
 
     if (xmlReader.getValue("settings:debug", 0, 0) == 1){
-        DEBUG = true;
+        verbose = true;
     }
 
     if(xmlReader.getValue("settings:simulation:on", 0, 0) == 1){
@@ -174,7 +210,7 @@ void ofxMPEClient::loadIniFile(string _fileString) {
         cout << "using simulation mode" << endl;
     }
 
-    out("Settings: server = " + hostName + ":" + ofToString(serverPort) + ",  id = " + ofToString(id)
+    log("Settings: server = " + hostName + ":" + ofToString(serverPort) + ",  id = " + ofToString(id)
         + ", local dimensions = " + ofToString(lWidth) + ", " + ofToString(lHeight)
         + ", location = " + ofToString(xOffset) + ", " + ofToString(yOffset));
 }
@@ -343,30 +379,25 @@ bool ofxMPEClient::isOnScreen(float _x, float _y, float _w, float _h) {
 //--------------------------------------------------------------
 // Outputs a message to the console.
 //--------------------------------------------------------------
-void ofxMPEClient::out(string _str) {
+void ofxMPEClient::log(string _str) {
     //print(_str);
     //cout << _str << endl;
-}
-
-//--------------------------------------------------------------
-// Outputs a message to the console.
-//--------------------------------------------------------------
-void ofxMPEClient::print(string _str) {
-    if (DEBUG)
-        cout << "mpeClient: " << _str << endl;
+	if(verbose){
+		ofLogNotice("MPE Client " + clientName + " : " + ofToString(id)) << _str;
+	}
 }
 
 //--------------------------------------------------------------
 // Outputs an error message to the console.
 //--------------------------------------------------------------
-void ofxMPEClient::err(string _str) {
+void ofxMPEClient::error(string _str) {
     //cerr << "mpeClient: " << _str << endl;
-    ofLog(OF_LOG_ERROR, "MPE Client Error :: " + _str);
+	ofLogError("MPE Client " + clientName + " : " + ofToString(id)) << _str;
 }
 
 //--------------------------------------------------------------
 void ofxMPEClient::threadedFunction() {
-    out("Running!");
+    log("Running!");
     
     lastHeartbeatTime = ofGetElapsedTimef();
     
@@ -376,7 +407,7 @@ void ofxMPEClient::threadedFunction() {
     }
     else{
         //start a listener
-        send("L");
+        send("A");
     }
 
     while(isThreadRunning()) {
@@ -418,8 +449,8 @@ void ofxMPEClient::threadedFunction() {
             //we lost connection, start the retry loop and kill the thread
             lastConnectionAttempt = ofGetElapsedTimef();
             ofAddListener(ofEvents().update, this, &ofxMPEClient::retryConnectionLoop);
-            //stopThread();
-            waitForThread();
+            waitForThread(true);
+			//stopThread();
             if(useMainThread){
                 shouldReset = true;
             }
@@ -427,9 +458,9 @@ void ofxMPEClient::threadedFunction() {
                 reset();
             }
 
-            if(DEBUG){
-                cout << "lost connection to server " << endl;
-            }
+			error("lost connection to server");
+            
+			
             //break the loop because we'll need to restart
             return;
         }
@@ -453,7 +484,7 @@ void ofxMPEClient::threadedFunction() {
 // Reads and parses a message from the server.
 //--------------------------------------------------------------
 void ofxMPEClient::read(string _serverInput) {
-    out("Receiving: " + _serverInput);
+    log("Receiving: " + _serverInput);
 
     char c = _serverInput.at(0);
     if(c == 'R'){
@@ -470,7 +501,7 @@ void ofxMPEClient::read(string _serverInput) {
     }
     else if (c == 'G' || c == 'B' || c == 'I') {
         if (!allConnected) {
-            if (DEBUG) out("all connected!");
+            if (verbose) log("all connected!");
             allConnected = true;
         }
         
@@ -562,8 +593,7 @@ void ofxMPEClient::send(string _msg) {
 
     //_msg += "\n";
     if(!simulationMode && frameLock){
-        out("Sending: " + _msg);
-        //tcpClient.sendRaw(_msg);
+        log("Sending: " + _msg);
         tcpClient.send(_msg);
     }
 }
@@ -590,7 +620,6 @@ void ofxMPEClient::done() {
     if(outgoingMessage != ""){
         msg += outgoingMessage;
         outgoingMessage = "";
-        //cout << "MPE DEBUG :: outgoing message is " << msg << endl;
     }
     send(msg);
 }
@@ -599,7 +628,7 @@ void ofxMPEClient::done() {
 // Stops the client thread.  You don't really need to do this ever.
 //--------------------------------------------------------------
 void ofxMPEClient::stop() {
-    out("Quitting.");
+    log("Quitting.");
     stopThread();
     if(useMainThread){
         ofRemoveListener(ofEvents().draw, this, &ofxMPEClient::draw);

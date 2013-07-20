@@ -25,6 +25,7 @@
 class ofxMPEEventArgs : public ofEventArgs
 {
   public:
+	int senderId;
 	int frame;
 	string message;
 };

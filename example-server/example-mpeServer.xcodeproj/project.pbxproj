@@ -238,13 +238,13 @@
 		E76B8DBD13DF3E8D0091E482 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				E76B8DC413DF3E8D0091E482 /* ofxMostPixelsEver.h */,
+				E75ED880179AF011007667F1 /* ofxMPEEvents.h */,
 				E75ED87F179AF011007667F1 /* ofxMPEEvents.cpp */,
 				E75ED87E179AF011007667F1 /* ofxMPEClient.h */,
 				E75ED87D179AF011007667F1 /* ofxMPEClient.cpp */,
-				E75ED880179AF011007667F1 /* ofxMPEEvents.h */,
 				E75ED882179AF011007667F1 /* ofxMPEServer.h */,
 				E75ED881179AF011007667F1 /* ofxMPEServer.cpp */,
-				E76B8DC413DF3E8D0091E482 /* ofxMostPixelsEver.h */,
 			);
 			name = src;
 			path = ../src;
