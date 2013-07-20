@@ -27,208 +27,208 @@
 class ofxMPEClient : public ofThread {
 
   public:
-	ofxMPEClient();
+    ofxMPEClient();
 
-	//must call this before calling setup and it will work offline
-	void  useSimulationMode(int framesPerSecond); //will work offline
+    //must call this before calling setup and it will work offline
+    void  useSimulationMode(int framesPerSecond); //will work offline
 
-	void setup(string _fileString, bool mainThreadOnly = true);
-	//TODO: simple non-xml based setup method
-	//void setup(string hostname, int clientId, int port, bool mainThreadOnly = true);
+    void setup(string _fileString, bool mainThreadOnly = true);
+    //TODO: simple non-xml based setup method
+    //void setup(string hostname, int clientId, int port, bool mainThreadOnly = true);
 
-	void  done(); //done drawing
+    void  done(); //done drawing
 
-	void  start();
-	void  stop();
+    void  start();
+    void  stop();
 
-//	void  draw();
+//    void  draw();
 
-	int   getPort() { return serverPort; }
-	int   getID()   { return id; }
+    int   getPort() { return serverPort; }
+    int   getID()   { return id; }
 
 
-	//we need this incase the server launches after the clients
-	void setDoesRetry(bool doRetry);
+    //we need this incase the server launches after the clients
+    void setDoesRetry(bool doRetry);
 
-	void  setLocalDimensions(int _xOffset, int _yOffset, int _lWidth, int _lHeight);
-	void  setMasterDimensions(int _mWidth, int _mHeight);
+    void  setLocalDimensions(int _xOffset, int _yOffset, int _lWidth, int _lHeight);
+    void  setMasterDimensions(int _mWidth, int _mHeight);
 
-	// return dimensions in pixels
-	int   getLWidth()  { return lWidth; }
-	int   getLHeight() { return lHeight; }
-	int   getXoffset() { return xOffset; }
-	int   getYoffset() { return yOffset; }
-	int   getMWidth()  { return mWidth; }
-	int   getMHeight() { return mHeight; }
+    // return dimensions in pixels
+    int   getLWidth()  { return lWidth; }
+    int   getLHeight() { return lHeight; }
+    int   getXoffset() { return xOffset; }
+    int   getYoffset() { return yOffset; }
+    int   getMWidth()  { return mWidth; }
+    int   getMHeight() { return mHeight; }
 
     void setClientName(string name){ clientName = name; }
 
-	int   getFrameCount() { return frameCount; }
-	float getFPS()        { return fps; }
-	
-//	bool  isRendering()   { return rendering; }
-	bool isConnected();
-	void  setFieldOfView(float _val);
-	float getFieldOfView() { return fieldOfView; }
+    int   getFrameCount() { return frameCount; }
+    float getFPS()        { return fps; }
+    
+//    bool  isRendering()   { return rendering; }
+    bool isConnected();
+    void  setFieldOfView(float _val);
+    float getFieldOfView() { return fieldOfView; }
 
-	//TODO: move camera abstractions into ofCamera()
-	void  placeScreen();
-	void  enable3D(bool _b);
-	void  placeScreen2D();
-	void  placeScreen3D();
-	void  restoreCamera();
+    //TODO: move camera abstractions into ofCamera()
+    void  placeScreen();
+    void  enable3D(bool _b);
+    void  placeScreen2D();
+    void  placeScreen3D();
+    void  restoreCamera();
 
-	bool  isOnScreen(float _x, float _y);
-	bool  isOnScreen(float _x, float _y, float _w, float _h);
+    bool  isOnScreen(float _x, float _y);
+    bool  isOnScreen(float _x, float _y, float _w, float _h);
 
-	void  broadcast(string _msg);
-	bool  areAllConnected() { return allConnected; }
+    void  broadcast(string _msg);
+    bool  areAllConnected() { return allConnected; }
 
-//	bool  messageAvailable() { return bMessageAvailable; }
-	//TODO: Add int//byte event
-//	vector<string> getDataMessage() { return dataMessage; }
-//	bool  intsAvailable() { return bIntsAvailable; }
-//	vector<int> getInts() { return ints; }
-	//TODO add
-//	bool  bytesAvailable() { return bBytesAvailable; }
-//	vector<char> getBytes() { return bytes; }
+//    bool  messageAvailable() { return bMessageAvailable; }
+    //TODO: Add int//byte event
+//    vector<string> getDataMessage() { return dataMessage; }
+//    bool  intsAvailable() { return bIntsAvailable; }
+//    vector<int> getInts() { return ints; }
+    //TODO add
+//    bool  bytesAvailable() { return bBytesAvailable; }
+//    vector<char> getBytes() { return bytes; }
 
-	bool  DEBUG;
+    bool  DEBUG;
 
   protected:
-	void setDefaults() {
-		DEBUG = true;
+    void setDefaults() {
+        DEBUG = true;
         frameLock = true;
 
-		id = 0;
-		mWidth  = -1;
-		mHeight = -1;
-		lWidth  = 640;
-		lHeight = 480;
-		xOffset = 0;
-		yOffset = 0;
+        id = 0;
+        mWidth  = -1;
+        mHeight = -1;
+        lWidth  = 640;
+        lHeight = 480;
+        xOffset = 0;
+        yOffset = 0;
 
-		retryConnection = true;
-		triggerFrame = false;
+        retryConnection = true;
+        triggerFrame = false;
 
-		lastConnectionAttempt = 0;
-		isAttemptingToConnect = false;
-		simulationMode = false;
+        lastConnectionAttempt = 0;
+        isAttemptingToConnect = false;
+        simulationMode = false;
 
-		frameCount = 0;
-		fps        = 0.f;
-		lastMs     = 0;
+        frameCount = 0;
+        fps        = 0.f;
+        lastMs     = 0;
 
-		allConnected = false;
-		lastHeartbeatTime = 0.0;
-		
-		outgoingMessage = "";
+        allConnected = false;
+        lastHeartbeatTime = 0.0;
+        
+        outgoingMessage = "";
 
-		lastmsg = "";
+        lastmsg = "";
 
         goFullScreen = false;
         offsetWindow = false;
 
-		bEnable3D    = false;
-		fieldOfView = 30.f;
-		
-		
+        bEnable3D    = false;
+        fieldOfView = 30.f;
+        
+        
 
-		clientName = "noname";
-	}
+        clientName = "noname";
+    }
 
-	//void _draw(ofEventArgs &e) { draw(); }
-	void draw(ofEventArgs& e);
-	void retryConnectionLoop(ofEventArgs& e);
+    //void _draw(ofEventArgs &e) { draw(); }
+    void draw(ofEventArgs& e);
+    void retryConnectionLoop(ofEventArgs& e);
 
-	void threadedFunction();
+    void threadedFunction();
 
-	void loadIniFile(string _fileString);
+    void loadIniFile(string _fileString);
 
-	void setLocalDimensions(int _lWidth, int _lHeight);
-	void setOffsets(int _xOffset, int _yOffset);
+    void setLocalDimensions(int _lWidth, int _lHeight);
+    void setOffsets(int _xOffset, int _yOffset);
 
-	void  out(string _msg);
-	void  print(string _msg);
-	void  err(string _msg);
+    void  out(string _msg);
+    void  print(string _msg);
+    void  err(string _msg);
 
     void setupViewport();
 
 //        void run();
-	void read(string _serverInput);
-	void send(string _msg);
+    void read(string _serverInput);
+    void send(string _msg);
 
-	void reset();
+    void reset();
 
-//	bool useMessageMode; //sends messages instead of a callback
-//	mpeClientListener* parent;
+//    bool useMessageMode; //sends messages instead of a callback
+//    mpeClientListener* parent;
 
-	string       hostName;
-	int          serverPort;
-	ofxTCPClient tcpClient;
+    string       hostName;
+    int          serverPort;
+    ofxTCPClient tcpClient;
 
-	/** The id is used for communication with the server, to let it know which
-	 *  client is speaking and how to order the screens. */
-	int id;
-	/** The total number of screens. */
-	int numScreens;
+    /** The id is used for communication with the server, to let it know which
+     *  client is speaking and how to order the screens. */
+    int id;
+    /** The total number of screens. */
+    int numScreens;
     bool goFullScreen;
     bool offsetWindow;
-	float lastHeartbeatTime;
-	
-	/** The master width. */
-	int mWidth;
-	/** The master height. */
-	int mHeight;
+    float lastHeartbeatTime;
+    
+    /** The master width. */
+    int mWidth;
+    /** The master height. */
+    int mHeight;
 
-	/** The local width. */
-	int lWidth;
-	/** The local height. */
-	int lHeight;
+    /** The local width. */
+    int lWidth;
+    /** The local height. */
+    int lHeight;
 
-	int xOffset;
-	int yOffset;
+    int xOffset;
+    int yOffset;
 
-	string outgoingMessage;
+    string outgoingMessage;
 
     bool frameLock;
-	bool retryConnection; //TODO: retry connection
-	bool isAttemptingToConnect;
-	float lastConnectionAttempt;
+    bool retryConnection; //TODO: retry connection
+    bool isAttemptingToConnect;
+    float lastConnectionAttempt;
 
     string clientName;
 
-	bool triggerFrame;
-	bool shouldReset;
-	//bool rendering;
-	bool useMainThread;
+    bool triggerFrame;
+    bool shouldReset;
+    //bool rendering;
+    bool useMainThread;
 
-	//simulation mode
-	bool simulationMode;
-	float lastFrameTime;
-	int simulatedFPS;
+    //simulation mode
+    bool simulationMode;
+    float lastFrameTime;
+    int simulatedFPS;
 
-	int   frameCount;
-	float fps;
-	long  lastMs;
+    int   frameCount;
+    float fps;
+    long  lastMs;
 
-	/** True if all the other clients are connected. */
-	bool allConnected;
+    /** True if all the other clients are connected. */
+    bool allConnected;
 
-	bool bMessageAvailable;
-	bool bIntsAvailable;
-	bool bBytesAvailable;
-	vector<string> dataMessage;
-	vector<int>    ints;
-	vector<char>   bytes;
-	float heartbeatInterval;
-	float timeOfNextHeartbeat;
+    bool bMessageAvailable;
+    bool bIntsAvailable;
+    bool bBytesAvailable;
+    vector<string> dataMessage;
+    vector<int>    ints;
+    vector<char>   bytes;
+    float heartbeatInterval;
+    float timeOfNextHeartbeat;
 
-	string lastmsg; //used to ignore duplicates
+    string lastmsg; //used to ignore duplicates
 
-	// 3D variables
-	bool  bEnable3D;
-	float fieldOfView;
-	float cameraZ;
+    // 3D variables
+    bool  bEnable3D;
+    float fieldOfView;
+    float cameraZ;
 
 };

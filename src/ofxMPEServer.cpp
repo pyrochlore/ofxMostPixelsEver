@@ -93,39 +93,39 @@ void ofxMPEServer::update(ofEventArgs& args)
 //	if(!server.isConnected()){
 //		ofLog(OF_LOG_ERROR, "MPE Server :: Server Disconnected");
 //	}
-//    if(lock()){
+//	if(lock()){
 
-//        if(shouldTriggerFrame){
-//            float now = ofGetElapsedTimef();
-//            float elapsed = (now - lastFrameTriggeredTime);
-//    //		cout << "should trigger frame!" << endl;
+//		if(shouldTriggerFrame){
+//			float now = ofGetElapsedTimef();
+//			float elapsed = (now - lastFrameTriggeredTime);
+//	//		cout << "should trigger frame!" << endl;
 //
-//            if(elapsed >= 1.0/framerate){
+//			if(elapsed >= 1.0/framerate){
 //
-//    //			cout << "triggered frame with framerate error of " << fabs( elapsed - 1.0/framerate)  << endl;
+//	//			cout << "triggered frame with framerate error of " << fabs( elapsed - 1.0/framerate)  << endl;
 //
-//                string message = "G,"+ofToString(currentFrame);
-//                if (newMessage){
-//                    message += currentMessage;
-//                    newMessage = false;
-//                    currentMessage = "";
-//                }
+//				string message = "G,"+ofToString(currentFrame);
+//				if (newMessage){
+//					message += currentMessage;
+//					newMessage = false;
+//					currentMessage = "";
+//				}
 //
-//                //TODO append message
-//                server.sendToAll(message);
+//				//TODO append message
+//				server.sendToAll(message);
 //
-//                for(int i = 0; i < connections.size(); i++){
-//                    connections[i].ready = false;
-//                }
+//				for(int i = 0; i < connections.size(); i++){
+//					connections[i].ready = false;
+//				}
 //
-//                shouldTriggerFrame = false;
-//                lastFrameTriggeredTime = now;
-//                currentFrame++;
-//            }
-//        }
+//				shouldTriggerFrame = false;
+//				lastFrameTriggeredTime = now;
+//				currentFrame++;
+//			}
+//		}
 
-//        unlock();
-//    }
+//		unlock();
+//	}
 }
 
 
@@ -220,11 +220,11 @@ void ofxMPEServer::threadedFunction()
 					if(clientID < numExpectedClients){
 						vector<string> info = ofSplitString(response, ",", true, true);
 						if(connections[clientID].started && currentFrame != 0){
-                            //client already started, must have reset...
-                            allconnected = false;
-                            currentFrame = 0;
-                            shouldTriggerFrame = false;
-                            server.sendToAll("R");
+							//client already started, must have reset...
+							allconnected = false;
+							currentFrame = 0;
+							shouldTriggerFrame = false;
+							server.sendToAll("R");
 						}
 
 						connections[clientID].tcpServerIndex = i;
@@ -294,17 +294,17 @@ void ofxMPEServer::threadedFunction()
 				}
 			}
 		}
-        ofSleepMillis(5);
+		ofSleepMillis(5);
 	}//end while
 }
 
 void ofxMPEServer::printClientStatus()
 {
-    ofLog(OF_LOG_NOTICE, "MPE Client Status:");
-    ofLog(OF_LOG_NOTICE, "  Expecting " + ofToString(numExpectedClients) + " Clients");
-    for(int i = 0; i < connections.size(); i++){
-        ofLog(OF_LOG_NOTICE, "  Client (" + ofToString(i) + ") " + connections[i].name + " connected? " + (connections[i].started ? "yes" : "no") );
-    }
+	ofLog(OF_LOG_NOTICE, "MPE Client Status:");
+	ofLog(OF_LOG_NOTICE, "  Expecting " + ofToString(numExpectedClients) + " Clients");
+	for(int i = 0; i < connections.size(); i++){
+		ofLog(OF_LOG_NOTICE, "  Client (" + ofToString(i) + ") " + connections[i].name + " connected? " + (connections[i].started ? "yes" : "no") );
+	}
 }
 
 void ofxMPEServer::close()

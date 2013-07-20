@@ -38,7 +38,7 @@ class ofxMPEServer : public ofThread
 	void setup(int framerate, int port, int numClients);
 	void reset(); //sends a reset signal to all clients and reset frame count
 	void close();
-    void printClientStatus();
+	void printClientStatus();
 
   protected:
 	ofxTCPServer server;

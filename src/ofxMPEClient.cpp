@@ -26,55 +26,55 @@ ofxMPEClient::ofxMPEClient() {
 //--------------------------------------------------------------
 void ofxMPEClient::setup(string _fileString, bool updateOnMainThread) {
 
-	useMainThread = updateOnMainThread;
+    useMainThread = updateOnMainThread;
 
-	fps = 0;
+    fps = 0;
     loadIniFile(_fileString);
-	frameCount = 0;
-	shouldReset = false;
-	heartbeatInterval = 0;
-	timeOfNextHeartbeat = ofGetElapsedTimef();
+    frameCount = 0;
+    shouldReset = false;
+    heartbeatInterval = 0;
+    timeOfNextHeartbeat = ofGetElapsedTimef();
 }
 
 //will work offline
 void  ofxMPEClient::useSimulationMode(int framesPerSecond)
 {
-	simulatedFPS = framesPerSecond;
-	simulationMode = true;
-	lastFrameTime = ofGetElapsedTimef();
+    simulatedFPS = framesPerSecond;
+    simulationMode = true;
+    lastFrameTime = ofGetElapsedTimef();
 }
 
 //--------------------------------------------------------------
 void ofxMPEClient::start() {
 
-	tcpClient.setVerbose(DEBUG);
+    tcpClient.setVerbose(DEBUG);
 
-	//if(useMainThread){
+    //if(useMainThread){
     ofAddListener(ofEvents().draw, this, &ofxMPEClient::draw);
-	//}
+    //}
 
     if (!simulationMode && !tcpClient.setup(hostName, serverPort)) {
         err("TCP failed to connect to port " + ofToString(serverPort));
-		lastConnectionAttempt = ofGetElapsedTimef();
-		ofAddListener(ofEvents().update, this, &ofxMPEClient::retryConnectionLoop);
+        lastConnectionAttempt = ofGetElapsedTimef();
+        ofAddListener(ofEvents().update, this, &ofxMPEClient::retryConnectionLoop);
     }
-	else{
-		startThread(true, false);  // blocking, verbose
-		out("TCP connection bound on port " + ofToString(serverPort));
-	}
+    else{
+        startThread(true, false);  // blocking, verbose
+        out("TCP connection bound on port " + ofToString(serverPort));
+    }
 }
 
 void ofxMPEClient::retryConnectionLoop(ofEventArgs& e)
 {
-	float now = ofGetElapsedTimef();
-	if(now - lastConnectionAttempt > 1.0){ //retry every second
-		if(tcpClient.setup(hostName, serverPort)) {
-			//cout << "retry succeeded, removing listener!" << endl;
-			ofRemoveListener(ofEvents().update, this, &ofxMPEClient::retryConnectionLoop);
-			startThread(true, false);  // blocking, verbose
-		}
-		lastConnectionAttempt = now;
-	}
+    float now = ofGetElapsedTimef();
+    if(now - lastConnectionAttempt > 1.0){ //retry every second
+        if(tcpClient.setup(hostName, serverPort)) {
+            //cout << "retry succeeded, removing listener!" << endl;
+            ofRemoveListener(ofEvents().update, this, &ofxMPEClient::retryConnectionLoop);
+            startThread(true, false);  // blocking, verbose
+        }
+        lastConnectionAttempt = now;
+    }
 }
 
 void ofxMPEClient::draw(ofEventArgs& e)
@@ -82,40 +82,40 @@ void ofxMPEClient::draw(ofEventArgs& e)
     //no blocking
     if(useMainThread && lock()) {
 
-		for(int i = 0; i < dataMessage.size(); i++){
-			ofxMPEEventArgs e;
-			e.message = dataMessage[i];
-			e.frame = getFrameCount();
-			//cout << "sending message in update " << e.frame << " message " << e.message << endl;
+        for(int i = 0; i < dataMessage.size(); i++){
+            ofxMPEEventArgs e;
+            e.message = dataMessage[i];
+            e.frame = getFrameCount();
+            //cout << "sending message in update " << e.frame << " message " << e.message << endl;
 
-			ofNotifyEvent(ofxMPEEvents.mpeMessage, e);
-		}
-		dataMessage.clear();
+            ofNotifyEvent(ofxMPEEvents.mpeMessage, e);
+        }
+        dataMessage.clear();
 
-		//TODO: ints, floats, bytes,
+        //TODO: ints, floats, bytes,
 
-		if(shouldReset){
-			reset();
-		}
+        if(shouldReset){
+            reset();
+        }
 
-		if(triggerFrame){
-			//ofLog(OF_LOG_VERBOSE, "Trigger Event :: ! with frame count " + frameCount);
+        if(triggerFrame){
+            //ofLog(OF_LOG_VERBOSE, "Trigger Event :: ! with frame count " + frameCount);
 
-			triggerFrame = false;
+            triggerFrame = false;
 
 //            cout << "triggering frame" << endl;
 
-			ofxMPEEventArgs e;
-			e.message = "";
-			e.frame = frameCount;
-			ofNotifyEvent(ofxMPEEvents.mpeFrame, e);
+            ofxMPEEventArgs e;
+            e.message = "";
+            e.frame = frameCount;
+            ofNotifyEvent(ofxMPEEvents.mpeFrame, e);
 
-			if(!simulationMode){
-				done();
-			}
-		}
+            if(!simulationMode){
+                done();
+            }
+        }
 
-		unlock();
+        unlock();
     }
 
     //cout << ofGetWidth() << " :: " << lWidth << "  " << ofGetHeight() << " :: " << lHeight << endl;
@@ -128,13 +128,13 @@ void ofxMPEClient::draw(ofEventArgs& e)
 // Loads the settings from the Client XML file.
 //--------------------------------------------------------------
 void ofxMPEClient::loadIniFile(string _fileString) {
-	out("Loading settings from file " + _fileString);
-
-	ofxXmlSettings xmlReader;
+    out("Loading settings from file " + _fileString);
+    
+    ofxXmlSettings xmlReader;
     if (!xmlReader.loadFile(_fileString)){
         err("ERROR loading XML file!");
-		return;
-	}
+        return;
+    }
 
     // parse INI file
     hostName   = xmlReader.getValue("settings:server:ip", "127.0.0.1", 0);
@@ -149,25 +149,25 @@ void ofxMPEClient::loadIniFile(string _fileString) {
     else{
         cout << "opting out of frame lock" << endl;
     }
-	cout << "***MPE:: HOST IS " << hostName << " Server Port is " << serverPort << endl;
+    cout << "***MPE:: HOST IS " << hostName << " Server Port is " << serverPort << endl;
 
-	setLocalDimensions(xmlReader.getValue("settings:local_dimensions:width",  640, 0),
-					   xmlReader.getValue("settings:local_dimensions:height", 480, 0));
+    setLocalDimensions(xmlReader.getValue("settings:local_dimensions:width",  640, 0),
+                       xmlReader.getValue("settings:local_dimensions:height", 480, 0));
 
     setOffsets(xmlReader.getValue("settings:local_location:x", 0, 0),
                xmlReader.getValue("settings:local_location:y", 0, 0));
 
-	setMasterDimensions(xmlReader.getValue("settings:master_dimensions:width",  640, 0),
-						xmlReader.getValue("settings:master_dimensions:height", 480, 0));
+    setMasterDimensions(xmlReader.getValue("settings:master_dimensions:width",  640, 0),
+                        xmlReader.getValue("settings:master_dimensions:height", 480, 0));
 
     goFullScreen = xmlReader.getValue("settings:go_fullscreen", "false", 0).compare("true") == 0;
     offsetWindow = xmlReader.getValue("settings:offset_window", "false", 0).compare("true") == 0;
 
     setupViewport();
 
-	if (xmlReader.getValue("settings:debug", 0, 0) == 1){
+    if (xmlReader.getValue("settings:debug", 0, 0) == 1){
         DEBUG = true;
-	}
+    }
 
     if(xmlReader.getValue("settings:simulation:on", 0, 0) == 1){
         useSimulationMode(xmlReader.getValue("settings:simulation:fps", 30));
@@ -181,13 +181,13 @@ void ofxMPEClient::loadIniFile(string _fileString) {
 
 void ofxMPEClient::setupViewport()
 {
-	if (goFullScreen){
-		ofSetFullscreen(true);
+    if (goFullScreen){
+        ofSetFullscreen(true);
     }
-	if(offsetWindow){
-		ofSetWindowPosition(xOffset, yOffset);
+    if(offsetWindow){
+        ofSetWindowPosition(xOffset, yOffset);
         ofSetWindowShape(lWidth, lHeight);
-	}
+    }
 }
 
 bool ofxMPEClient::isConnected()
@@ -345,7 +345,7 @@ bool ofxMPEClient::isOnScreen(float _x, float _y, float _w, float _h) {
 //--------------------------------------------------------------
 void ofxMPEClient::out(string _str) {
     //print(_str);
-	//cout << _str << endl;
+    //cout << _str << endl;
 }
 
 //--------------------------------------------------------------
@@ -361,78 +361,78 @@ void ofxMPEClient::print(string _str) {
 //--------------------------------------------------------------
 void ofxMPEClient::err(string _str) {
     //cerr << "mpeClient: " << _str << endl;
-	ofLog(OF_LOG_ERROR, "MPE Client Error :: " + _str);
+    ofLog(OF_LOG_ERROR, "MPE Client Error :: " + _str);
 }
 
 //--------------------------------------------------------------
 void ofxMPEClient::threadedFunction() {
     out("Running!");
-	
-	lastHeartbeatTime = ofGetElapsedTimef();
-	
+    
+    lastHeartbeatTime = ofGetElapsedTimef();
+    
     if(frameLock){
         // let the server know that this client is ready to start
         send("S" + ofToString(id) + "," + clientName);
     }
-	else{
-		//start a listener
-		send("L");
-	}
+    else{
+        //start a listener
+        send("L");
+    }
 
     while(isThreadRunning()) {
 
-		if(frameLock && simulationMode){
-			
-			float now = ofGetElapsedTimef();
-			if(now - lastFrameTime > 1./simulatedFPS){
-				if(!useMainThread){
-					ofxMPEEventArgs e;
-					e.message = "";
-					e.frame = frameCount;
-					ofNotifyEvent(ofxMPEEvents.mpeFrame, e);
-				}
-				else {
-					triggerFrame = true;
-				}
+        if(frameLock && simulationMode){
+            
+            float now = ofGetElapsedTimef();
+            if(now - lastFrameTime > 1./simulatedFPS){
+                if(!useMainThread){
+                    ofxMPEEventArgs e;
+                    e.message = "";
+                    e.frame = frameCount;
+                    ofNotifyEvent(ofxMPEEvents.mpeFrame, e);
+                }
+                else {
+                    triggerFrame = true;
+                }
 
-				lastFrameTime = now;
-				frameCount++;
-			}
+                lastFrameTime = now;
+                frameCount++;
+            }
 
             ofSleepMillis(5);
-			continue;
-		}
+            continue;
+        }
 
-		
-		if (allConnected && ofGetElapsedTimef() - lastHeartbeatTime > 2.0) {
-			//we lost connection... manually disconnect and join reset cycle
-			if(tcpClient.close()){
-				ofLog(OF_LOG_ERROR, "ofxMPEClient -- server connection timed out. Closing and entering reconnect loop.");
-			}
-			else{
-				ofLog(OF_LOG_ERROR, "ofxMPEClient -- Error when closing TCP connection after timeout.");			
-			}
-		}
-		
-		if(!tcpClient.isConnected()){
-			//we lost connection, start the retry loop and kill the thread
-			lastConnectionAttempt = ofGetElapsedTimef();
-			ofAddListener(ofEvents().update, this, &ofxMPEClient::retryConnectionLoop);
-			//stopThread();
-			waitForThread();
-			if(useMainThread){
-				shouldReset = true;
-			}
-			else{
-				reset();
-			}
+        
+        if (allConnected && ofGetElapsedTimef() - lastHeartbeatTime > 2.0) {
+            //we lost connection... manually disconnect and join reset cycle
+            if(tcpClient.close()){
+                ofLog(OF_LOG_ERROR, "ofxMPEClient -- server connection timed out. Closing and entering reconnect loop.");
+            }
+            else{
+                ofLog(OF_LOG_ERROR, "ofxMPEClient -- Error when closing TCP connection after timeout.");            
+            }
+        }
+        
+        if(!tcpClient.isConnected()){
+            //we lost connection, start the retry loop and kill the thread
+            lastConnectionAttempt = ofGetElapsedTimef();
+            ofAddListener(ofEvents().update, this, &ofxMPEClient::retryConnectionLoop);
+            //stopThread();
+            waitForThread();
+            if(useMainThread){
+                shouldReset = true;
+            }
+            else{
+                reset();
+            }
 
-			if(DEBUG){
+            if(DEBUG){
                 cout << "lost connection to server " << endl;
-			}
-			//break the loop because we'll need to restart
-			return;
-		}
+            }
+            //break the loop because we'll need to restart
+            return;
+        }
 
         if (!useMainThread || (useMainThread && lock()) ) {
             string msg = tcpClient.receive();
@@ -441,9 +441,9 @@ void ofxMPEClient::threadedFunction() {
                 lastmsg = msg;
             }
 
-			if(useMainThread){
-				unlock();
-			}
+            if(useMainThread){
+                unlock();
+            }
         }
         ofSleepMillis(5);
     }
@@ -456,26 +456,26 @@ void ofxMPEClient::read(string _serverInput) {
     out("Receiving: " + _serverInput);
 
     char c = _serverInput.at(0);
-	if(c == 'R'){
-		if(frameCount != 0){
-			//we received a reset signal
-			if(useMainThread){
-				shouldReset = true;
-			}
-			else{
-				reset();
-			}
-			cout << "Received frame reset" << endl;
-		}
-	}
+    if(c == 'R'){
+        if(frameCount != 0){
+            //we received a reset signal
+            if(useMainThread){
+                shouldReset = true;
+            }
+            else{
+                reset();
+            }
+            cout << "Received frame reset" << endl;
+        }
+    }
     else if (c == 'G' || c == 'B' || c == 'I') {
         if (!allConnected) {
             if (DEBUG) out("all connected!");
             allConnected = true;
         }
-		
-		lastHeartbeatTime = ofGetElapsedTimef();
-		
+        
+        lastHeartbeatTime = ofGetElapsedTimef();
+        
         // split into frame message and data message
         vector<string> info = ofSplitString(_serverInput, ":");
         vector<string> frameMessage = ofSplitString(info[0], ",");
@@ -484,28 +484,28 @@ void ofxMPEClient::read(string _serverInput) {
 
         if (frameLock && fc == frameCount) {
             frameCount++;
-			
+            
             // calculate new framerate
-			float nowms = ofGetElapsedTimeMillis();
+            float nowms = ofGetElapsedTimeMillis();
             float ms = nowms - lastMs;
             fps += ((1000.f / ms) - fps)*.2;
             lastMs = nowms;
 
-			if(!useMainThread){
+            if(!useMainThread){
 
                 //cout << "trigger frame " << frameCount << endl;
 
-				ofxMPEEventArgs e;
-				e.message = "";
-				e.frame = frameCount;
-				ofNotifyEvent(ofxMPEEvents.mpeFrame, e);
+                ofxMPEEventArgs e;
+                e.message = "";
+                e.frame = frameCount;
+                ofNotifyEvent(ofxMPEEvents.mpeFrame, e);
 
-				done();
+                done();
             }
-			else {
+            else {
                 //cout << "trigger frame " << frameCount << endl;
-				triggerFrame = true;
-			}
+                triggerFrame = true;
+            }
         }
 
          //JG switched to after done event
@@ -515,44 +515,44 @@ void ofxMPEClient::read(string _serverInput) {
 
             //TODO: Track Byte/Int/Floats messages too
             for(int i = 0; i < info.size(); i++){
-				if(useMainThread){
-					dataMessage.push_back( info[i] );
-				}
-				else{
-					ofxMPEEventArgs e;
-					e.message = info[i];
-					e.frame = getFrameCount();
+                if(useMainThread){
+                    dataMessage.push_back( info[i] );
+                }
+                else{
+                    ofxMPEEventArgs e;
+                    e.message = info[i];
+                    e.frame = getFrameCount();
 
-					//cout << "sending message in update " << e.frame << " message " << e.message << endl;
+                    //cout << "sending message in update " << e.frame << " message " << e.message << endl;
 
-					ofNotifyEvent(ofxMPEEvents.mpeMessage, e);
+                    ofNotifyEvent(ofxMPEEvents.mpeMessage, e);
 
-				}
-				//cout << "MPE frame " << getFrameCount() << " receiving data message " << dataMessage[i] << endl;
+                }
+                //cout << "MPE frame " << getFrameCount() << " receiving data message " << dataMessage[i] << endl;
             }
-		}
+        }
     }
 }
 
 void ofxMPEClient::reset()
 {
-	ofxMPEEventArgs e;
-	e.message = "reset";
-	e.frame = frameCount;
-	ofNotifyEvent(ofxMPEEvents.mpeReset, e);
-	allConnected = false;
-	
-	shouldReset = false;
-	frameCount = 0;
+    ofxMPEEventArgs e;
+    e.message = "reset";
+    e.frame = frameCount;
+    ofNotifyEvent(ofxMPEEvents.mpeReset, e);
+    allConnected = false;
+    
+    shouldReset = false;
+    frameCount = 0;
 }
 
 //void ofxMPEClient::sendPauseEvent()
 //{
-//	ofxMPEEventArgs e;
-//	e.message = "pause";
-//	e.frame = frameCount;
+//    ofxMPEEventArgs e;
+//    e.message = "pause";
+//    e.frame = frameCount;
 //
-//	ofNotifyEvent(ofxMPEEvents.mpePause, e);
+//    ofNotifyEvent(ofxMPEEvents.mpePause, e);
 //}
 
 //--------------------------------------------------------------
@@ -561,11 +561,11 @@ void ofxMPEClient::reset()
 void ofxMPEClient::send(string _msg) {
 
     //_msg += "\n";
-	if(!simulationMode && frameLock){
-		out("Sending: " + _msg);
-		//tcpClient.sendRaw(_msg);
-		tcpClient.send(_msg);
-	}
+    if(!simulationMode && frameLock){
+        out("Sending: " + _msg);
+        //tcpClient.sendRaw(_msg);
+        tcpClient.send(_msg);
+    }
 }
 
 //--------------------------------------------------------------
@@ -573,10 +573,10 @@ void ofxMPEClient::send(string _msg) {
 // Do not use a colon ':' in your message!!!
 //--------------------------------------------------------------
 void ofxMPEClient::broadcast(string _msg) {
-	if(!simulationMode){
-		outgoingMessage += "," + _msg;
-		//cout << "outgoing message is now " << outgoingMessage << endl;
-	}
+    if(!simulationMode){
+        outgoingMessage += "," + _msg;
+        //cout << "outgoing message is now " << outgoingMessage << endl;
+    }
 }
 
 //--------------------------------------------------------------
@@ -587,11 +587,11 @@ void ofxMPEClient::broadcast(string _msg) {
 void ofxMPEClient::done() {
 //    rendering = false;
     string msg = "D," + ofToString(id) + "," + ofToString(frameCount);
-	if(outgoingMessage != ""){
-		msg += outgoingMessage;
-		outgoingMessage = "";
-		//cout << "MPE DEBUG :: outgoing message is " << msg << endl;
-	}
+    if(outgoingMessage != ""){
+        msg += outgoingMessage;
+        outgoingMessage = "";
+        //cout << "MPE DEBUG :: outgoing message is " << msg << endl;
+    }
     send(msg);
 }
 
@@ -601,9 +601,9 @@ void ofxMPEClient::done() {
 void ofxMPEClient::stop() {
     out("Quitting.");
     stopThread();
-	if(useMainThread){
-		ofRemoveListener(ofEvents().draw, this, &ofxMPEClient::draw);
-	}
+    if(useMainThread){
+        ofRemoveListener(ofEvents().draw, this, &ofxMPEClient::draw);
+    }
 }
 
 
