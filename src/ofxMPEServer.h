@@ -36,7 +36,7 @@ class ofxMPEServer : public ofThread
 {
   public:
 	ofxMPEServer();
-	~ofxMPEServer();
+
 
 	void setup(string setupFile);
 	void setup(int framerate = 30,
@@ -49,6 +49,8 @@ class ofxMPEServer : public ofThread
 	void close();
 	void printClientStatus();
 	
+	void exit(ofEventArgs& args);
+	
   protected:
 	ofxTCPServer server;
 	void threadedFunction();
@@ -57,7 +59,7 @@ class ofxMPEServer : public ofThread
 	float lastFrameTriggeredTime;
 	bool shouldWaitForAllClients;
 	bool allconnected;
-	bool running;
+
 	int framerate;
 	int numRequiredClients;
 	int currentFrame;

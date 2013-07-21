@@ -25,7 +25,7 @@ ofxMPEServer::ofxMPEServer()
 	numRequiredClients = 0;
 	currentFrame = 0;
 	shouldTriggerFrame = false;
-	running = false;
+
 	newMessage = false;
 	verbose = false;
 	delimiter = "|";
@@ -36,10 +36,6 @@ ofxMPEServer::ofxMPEServer()
 
 }
 
-ofxMPEServer::~ofxMPEServer()
-{
-	close();
-}
 
 void ofxMPEServer::setup(string settingsFile)
 {
@@ -55,6 +51,9 @@ void ofxMPEServer::setup(string settingsFile)
 		  settings.getValue("settings:numclients", 2),
 		  settings.getValue("settings:waitForAll", true),
 		  settings.getValue("settings:verbose", false));
+	
+	server.setMessageDelimiter("\n");
+	ofAddListener(ofEvents().exit, this, &ofxMPEServer::exit);
 }
 
 void ofxMPEServer::setup(int fps, int port, int numClients, bool waitForAll, bool verbose)
@@ -108,14 +107,15 @@ void ofxMPEServer::threadedFunction()
 
 			if(elapsed >= 1.0/framerate){
 
-				cout << "triggered frame with framerate error of " << fabs( elapsed - 1.0/framerate)  << endl;
+//				cout << "triggered frame with framerate error of " << fabs( elapsed - 1.0/framerate)  << endl;
 
+	
 				string message = "G"+delimiter+ofToString(currentFrame);
 				if (currentMessage != ""){
 					message += currentMessage;
 					currentMessage = "";
 				}
-
+				cout << "Sending " << message << endl;
 				//TODO: per-client messaging
 				server.sendToAll(message);
 				
@@ -160,8 +160,8 @@ void ofxMPEServer::threadedFunction()
 				string messageCode = splitResponse[0];
 				if(splitResponse[0] == "S"){
 				
-					if(splitResponse.size() != 3){
-						ofLogError() << "MostPixelsEver Wrong number of arguments for asynchronous connection. Format is S|ID#|Name " << response;
+					if(splitResponse.size() < 2){
+						ofLogError() << "MostPixelsEver Wrong number of arguments for synchronous connection. Format is S|ID#|Name. Actual Response [" << response << "]";
 						continue;
 					}
 					
@@ -176,13 +176,12 @@ void ofxMPEServer::threadedFunction()
 						reset();
 					}
 					
-					c.name = splitResponse[2];
+					c.name = splitResponse.size() > 2 ? splitResponse[2] : "no-name";
 					c.receiveMessages = true;
 					c.ready = false;
 					c.disconnected = false;
 					c.tcpServerIndex = i;
 					
-
 					connections[c.id] = c;
 				
 					printClientStatus();
@@ -226,7 +225,7 @@ void ofxMPEServer::threadedFunction()
 					
 					int clientID = ofToInt(splitResponse[1]);
 					int frameNumber = ofToInt(splitResponse[2]);
-					cout << "Received DONE signal from client " << clientID << " client frame num " <<  frameNumber << " server frame num " << currentFrame << endl;
+//					cout << "Received DONE signal from client " << clientID << " client frame num " <<  frameNumber << " server frame num " << currentFrame << endl;
 					if(frameNumber == currentFrame){
 						//TODO: validate client id
 						connections[clientID].ready = true;
@@ -266,9 +265,9 @@ void ofxMPEServer::threadedFunction()
 				
 				//all clients reported in, next frame!
 				if(allready){
-					cout << "All clients Ready!" << endl;
+//					cout << "All clients Ready!" << endl;
 					shouldTriggerFrame = true;
-					currentFrame++;					
+					currentFrame++;
 				}
 			}
 		}
@@ -289,20 +288,24 @@ void ofxMPEServer::printClientStatus() {
 	}
 }
 
+void ofxMPEServer::exit(ofEventArgs& args){
+	close();
+}
+
 void ofxMPEServer::close()
 {
-	if(!running) return;
-
-	cout << " closing MPE Server " << endl;
-
-	if(server.isConnected()){
+	if(isThreadRunning()){
+		
+		cout << " closing MPE Server " << endl;
+		
+		//if(server.isConnected()){
+		cout << "shutting down server" << endl;
 		server.close();
+
+		
+		connections.clear();
+		waitForThread(true);
+		
 	}
 
-	connections.clear();
-
-	//stopThread();
-	waitForThread(true);
-	
-	running = false;
 }
