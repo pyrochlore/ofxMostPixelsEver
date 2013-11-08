@@ -25,10 +25,10 @@ ofxMPEClient::ofxMPEClient() {
 
 //--------------------------------------------------------------
 void ofxMPEClient::setDefaults(){
-	verbose = true;
+	verbose = false;
 	frameLock = true;
 	delimiter = "|";
-	
+	messageDelimiter = "T"+delimiter;
 	id = 0;
 	mWidth  = -1;
 	mHeight = -1;
@@ -52,7 +52,7 @@ void ofxMPEClient::setDefaults(){
 	lastHeartbeatTime = 0.0;
 	
 	outgoingMessage = "";
-	
+	outgoingMessage.reserve(1000);
 	lastmsg = "";
 	
 	goFullScreen = false;
@@ -89,7 +89,7 @@ void ofxMPEClient::useSimulationMode(int framesPerSecond) {
 void ofxMPEClient::start() {
 
     tcpClient.setVerbose(verbose);
-
+	tcpClient.setMessageDelimiter("\n");
     ofAddListener(ofEvents().draw, this, &ofxMPEClient::draw);
 
     if (!simulationMode && !tcpClient.setup(hostName, serverPort)) {
@@ -132,6 +132,7 @@ void ofxMPEClient::draw(ofEventArgs& e)
             //cout << "sending message in update " << e.frame << " message " << e.message << endl;
 
             ofNotifyEvent(ofxMPEEvents.mpeMessage, e);
+
         }
         dataMessage.clear();
 
@@ -141,19 +142,16 @@ void ofxMPEClient::draw(ofEventArgs& e)
 
         if(triggerFrame){
             //ofLog(OF_LOG_VERBOSE, "Trigger Event :: ! with frame count " + frameCount);
-
             triggerFrame = false;
-
-//            cout << "triggering frame" << endl;
-
             ofxMPEEventArgs e;
             e.message = "";
             e.frame = frameCount;
-            ofNotifyEvent(ofxMPEEvents.mpeFrame, e);
+			ofNotifyEvent(ofxMPEEvents.mpeFrame, e);
 
             if(!simulationMode){
                 done();
             }
+
         }
 
         unlock();
@@ -291,7 +289,7 @@ void ofxMPEClient::setMasterDimensions(int _mWidth, int _mHeight) {
 //--------------------------------------------------------------
 void ofxMPEClient::setFieldOfView(float val) {
     fieldOfView = val;
-    cameraZ = (ofGetHeight() / 2.f) / tanf(M_PI * fieldOfView/360.f);
+    cameraZ = (ofGetHeight() / 2.f) / tanf(PI * fieldOfView/360.f);
 }
 
 //--------------------------------------------------------------
@@ -422,6 +420,7 @@ void ofxMPEClient::threadedFunction() {
         if(frameLock && simulationMode){
             
             float now = ofGetElapsedTimef();
+			
             if(now - lastFrameTime > 1./simulatedFPS){
                 if(!useMainThread){
                     ofxMPEEventArgs e;
@@ -434,7 +433,7 @@ void ofxMPEClient::threadedFunction() {
                 }
 
                 lastFrameTime = now;
-//                frameCount++;
+                frameCount++;
             }
 
             ofSleepMillis(5);
@@ -517,7 +516,7 @@ void ofxMPEClient::read(string _serverInput) {
         // split into frame message and data message
         vector<string> info = ofSplitString(_serverInput, delimiter);
         int fc = ofToInt( info[1] );
-		cout << "frameCount is " << fc << " and our current frame is " << frameCount << endl;
+		//cout << "frameCount is " << fc << " and our current frame is " << frameCount << endl;
         if (frameLock && fc == frameCount) {
 //            frameCount++;
             
@@ -593,11 +592,11 @@ void ofxMPEClient::reset()
 //--------------------------------------------------------------
 // Send a message to the server.
 //--------------------------------------------------------------
-void ofxMPEClient::send(string _msg) {
+void ofxMPEClient::send(string &_msg) {
 
     //_msg += "\n";
     if(!simulationMode && frameLock){
-        log("Sending: " + _msg);
+        //log("Sending: " + _msg);
         tcpClient.send(_msg);
     }
 }
@@ -606,10 +605,12 @@ void ofxMPEClient::send(string _msg) {
 // Format a broadcast message and send it.
 // Do not use a colon ':' in your message!!!
 //--------------------------------------------------------------
-void ofxMPEClient::broadcast(string _msg) {
+void ofxMPEClient::broadcast(const string &_msg) {
     if(!simulationMode){
-        outgoingMessage += delimiter + _msg;
-        //cout << "outgoing message is now " << outgoingMessage << endl;
+		bool add_return = _msg.find('\n') == string::npos;
+		outgoingMessage += messageDelimiter;
+		outgoingMessage += _msg;
+		if(add_return){ outgoingMessage += "\n"; }
     }
 }
 
@@ -620,12 +621,20 @@ void ofxMPEClient::broadcast(string _msg) {
 //TODO: if done has already been called, dont call it again
 void ofxMPEClient::done() {
 //    rendering = false;
-    string msg = "D" + delimiter + ofToString(id) + delimiter + ofToString(frameCount);
+    string msg;
+	msg.reserve(256);
+	msg += "D";
+	msg += delimiter;
+	msg += ofToString(id);
+	msg += delimiter;
+	msg += ofToString(frameCount);
+	msg += "\n";
 	//TODO: Messaging needs "T"....
-//    if(outgoingMessage != ""){
-//        msg += outgoingMessage;
-//        outgoingMessage = "";
-//    }
+	if(!outgoingMessage.empty()){
+        msg += outgoingMessage;
+		outgoingMessage.clear();
+    }
+		
     send(msg);
 	frameCount++;
 }

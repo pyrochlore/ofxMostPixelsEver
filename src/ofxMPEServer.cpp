@@ -17,7 +17,6 @@
 
 #include "ofxMPEServer.h"
 #include "ofxXmlSettings.h"
-
 ofxMPEServer::ofxMPEServer()
 {
 	allconnected = false;
@@ -97,13 +96,12 @@ void ofxMPEServer::reset()
 
 void ofxMPEServer::threadedFunction()
 {
+	//WARNING printing to cout in this thread can cause major slowdown don't do it 
 	while(isThreadRunning()){
 
 		if(shouldTriggerFrame){
 			float now = ofGetElapsedTimef();
 			float elapsed = (now - lastFrameTriggeredTime);
-
-			//cout << "should trigger frame!" << endl;
 
 			if(elapsed >= 1.0/framerate){
 
@@ -115,10 +113,8 @@ void ofxMPEServer::threadedFunction()
 					message += currentMessage;
 					currentMessage = "";
 				}
-				cout << "Sending " << message << endl;
 				//TODO: per-client messaging
 				server.sendToAll(message);
-				
 				map<int, Connection>::iterator it;
 				for(it = connections.begin(); it != connections.end(); it++){
 					it->second.ready = false;
@@ -132,14 +128,20 @@ void ofxMPEServer::threadedFunction()
 
 			//check for dead clients
 			map<int, Connection>::iterator it;
+			int activeConnections = 0;
 			for(it = connections.begin(); it != connections.end(); it++){
 				Connection& connection = it->second;
 				if(!connection.disconnected && !server.isClientConnected(connection.tcpServerIndex)){
 					cout << "LOST CONNECTION TO CLIENT " << connection.id << endl;
 					connection.disconnected = true;
+				}else{
+					activeConnections++;
 				}
 			}
-
+			if(allconnected && activeConnections < numRequiredClients){
+				allconnected = false;
+				reset();
+			}
 			for(int i = 0; i < server.getLastID(); i++){
 				
 				if(!server.isClientConnected(i)){
@@ -208,7 +210,8 @@ void ofxMPEServer::threadedFunction()
 				else if(splitResponse[0] == "T"){
 					
 					//TODO: per-client messages
-					currentMessage += delimiter + splitResponse[1];
+					currentMessage += delimiter;
+					currentMessage += splitResponse[1];
 					
 				}
 				else if(splitResponse[0] == "D"){
@@ -232,14 +235,13 @@ void ofxMPEServer::threadedFunction()
 					}					
 				}
 			}
-
 			//if we are still waiting for everyone to be connected check to see if we are all here...
 			if(!allconnected){
 				int numConnected = 0;
 				map<int, Connection>::iterator it;				
 				for(it = connections.begin(); it != connections.end(); it++){
 					Connection& connection = it->second;
-					if( !connection.asynchronous ){
+					if( !connection.asynchronous && !connection.disconnected){
 						numConnected++;
 					}
 				}
@@ -247,7 +249,7 @@ void ofxMPEServer::threadedFunction()
 				//we are all here! trigger the first frame
 				if(numConnected == numRequiredClients){
 					allconnected = true;
-					shouldTriggerFrame = true;					
+					shouldTriggerFrame = true;
 					cout << "All clients connected!" << endl;
 				}
 			}
@@ -257,7 +259,7 @@ void ofxMPEServer::threadedFunction()
 				map<int, Connection>::iterator it;
 				for(it = connections.begin(); it != connections.end(); it++){
 					Connection& connection = it->second;
-					if(!connection.asynchronous && !connection.ready){
+					if(!connection.asynchronous && !connection.disconnected && !connection.ready){
 						allready = false;
 						break;
 					}

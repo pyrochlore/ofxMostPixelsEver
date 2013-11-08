@@ -20,7 +20,6 @@
 #include "ofMain.h"
 #include "ofxNetwork.h"
 
-
 typedef struct
 {
 	string name;

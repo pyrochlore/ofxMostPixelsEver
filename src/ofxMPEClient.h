@@ -22,7 +22,6 @@
 #include "ofxNetwork.h"
 #include "ofxXmlSettings.h"
 
-
 //--------------------------------------------------------------
 class ofxMPEClient : public ofThread {
 
@@ -81,7 +80,7 @@ class ofxMPEClient : public ofThread {
     bool  isOnScreen(float _x, float _y);
     bool  isOnScreen(float _x, float _y, float _w, float _h);
 
-    void  broadcast(string _msg);
+    void  broadcast(const string &_msg);
     bool  areAllConnected() { return allConnected; }
 
 
@@ -90,6 +89,7 @@ class ofxMPEClient : public ofThread {
 
 	bool verbose;
 	string delimiter;
+	string messageDelimiter;
 	
     void draw(ofEventArgs& e);
     void retryConnectionLoop(ofEventArgs& e);
@@ -107,7 +107,7 @@ class ofxMPEClient : public ofThread {
     void setupViewport();
 
     void read(string _serverInput);
-    void send(string _msg);
+    void send(string &_msg);
 
     void reset();
 
@@ -176,5 +176,4 @@ class ofxMPEClient : public ofThread {
     bool  bEnable3D;
     float fieldOfView;
     float cameraZ;
-
 };
