@@ -88,8 +88,7 @@ void ofxMPEClient::useSimulationMode(int framesPerSecond) {
 //--------------------------------------------------------------
 void ofxMPEClient::start() {
 
-    tcpClient.setVerbose(verbose);
-	tcpClient.setMessageDelimiter("\n");
+    tcpClient.setMessageDelimiter("\n");
     ofAddListener(ofEvents().draw, this, &ofxMPEClient::draw);
 
     if (!simulationMode && !tcpClient.setup(hostName, serverPort)) {
