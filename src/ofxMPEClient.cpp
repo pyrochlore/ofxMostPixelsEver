@@ -592,7 +592,7 @@ void ofxMPEClient::reset()
 //--------------------------------------------------------------
 // Send a message to the server.
 //--------------------------------------------------------------
-void ofxMPEClient::send(string &_msg) {
+void ofxMPEClient::send(const string &_msg) {
 
     //_msg += "\n";
     if(!simulationMode && frameLock){
