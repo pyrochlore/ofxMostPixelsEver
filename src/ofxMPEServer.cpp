@@ -79,7 +79,7 @@ void ofxMPEServer::setup(int fps, int port, int numClients, bool waitForAll, boo
 	lastFrameTriggeredTime = 0;
 	currentFrame = 0;
 
-	startThread(true, false);
+	startThread(true);
 
 	cout << "Setting up server with FPS " << fps << " on port " << port << " with clients " << numClients << endl;
 }

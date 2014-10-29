@@ -97,7 +97,7 @@ void ofxMPEClient::start() {
         ofAddListener(ofEvents().update, this, &ofxMPEClient::retryConnectionLoop);
     }
     else{
-        startThread(true, false);  // blocking, verbose
+        startThread(true);  // blocking
         log("TCP connection bound on port " + ofToString(serverPort));
     }
 }
@@ -110,7 +110,7 @@ void ofxMPEClient::retryConnectionLoop(ofEventArgs& e)
         if(tcpClient.setup(hostName, serverPort)) {
             //cout << "retry succeeded, removing listener!" << endl;
             ofRemoveListener(ofEvents().update, this, &ofxMPEClient::retryConnectionLoop);
-            startThread(true, false);  // blocking, verbose
+            startThread(true);  // blocking
         }
         lastConnectionAttempt = now;
     }
