@@ -157,9 +157,8 @@ void ofxMPEClient::draw(ofEventArgs& e)
     }
 
     //cout << ofGetWidth() << " :: " << lWidth << "  " << ofGetHeight() << " :: " << lHeight << endl;
-    if(ofGetWindowPositionX() != xOffset || ofGetWindowPositionY() != yOffset || ofGetWidth() != lWidth || ofGetHeight() != lHeight){
-        setupViewport();
-    }
+    setupViewport();
+
 }
 
 //--------------------------------------------------------------
@@ -203,6 +202,7 @@ void ofxMPEClient::loadIniFile(string _fileString) {
 
     setupViewport();
 
+
     if (xmlReader.getValue("settings:debug", 0, 0) == 1){
         verbose = true;
     }
@@ -222,9 +222,15 @@ void ofxMPEClient::setupViewport()
 {
     if (goFullScreen){
         ofSetFullscreen(true);
+        return;
     }
-    if(offsetWindow){
+
+    if(offsetWindow && (ofGetWindowPositionX() != xOffset || ofGetWindowPositionY() != yOffset) ){
         ofSetWindowPosition(xOffset, yOffset);
+    }
+
+    //do the window resizing only if the window size is different, or the canvas will be cleaned
+    if(ofGetWidth() != lWidth || ofGetHeight() != lHeight){
         ofSetWindowShape(lWidth, lHeight);
     }
 }
