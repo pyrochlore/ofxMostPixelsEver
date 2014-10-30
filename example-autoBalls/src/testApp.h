@@ -2,10 +2,10 @@
 #define _TEST_APP
 
 #include "ofMain.h"
-#include "mpeClientTCP.h"
+#include "ofxMostPixelsEver.h"
 #include "Ball.h"
 
-class testApp : public ofBaseApp, public mpeClientListener {
+class testApp : public ofBaseApp {
 
 	public:
         void setup();
@@ -20,12 +20,13 @@ class testApp : public ofBaseApp, public mpeClientListener {
         void mouseReleased(int x, int y, int button);
         void windowResized(int w, int h);
         
-        void frameEvent();
+        void mpeFrameEvent(ofxMPEEventArgs& event);
+        void mpeMessageEvent(ofxMPEEventArgs& event);
+        void mpeResetEvent(ofxMPEEventArgs& event);
     
     private:
-        mpeClientTCP  client;
+        ofxMPEClient  client;
         vector<Ball*> balls;
-    
 };
 
 #endif

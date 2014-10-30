@@ -26,10 +26,10 @@ class Ball {
         
         //--------------------------------------
         void draw() {
-            ofSetColor(0, 0, 0, 100);
+            ofSetColor(ofColor::red);
             ofFill();
             ofCircle(x, y, d);
-            ofSetColor(0);
+            ofSetColor(ofColor::blue);
             ofNoFill();
             ofCircle(x, y, d);
         }
