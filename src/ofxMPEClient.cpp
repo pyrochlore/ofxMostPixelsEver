@@ -543,11 +543,9 @@ void ofxMPEClient::read(string _serverInput) {
         }
 
          //JG switched to after done event
-        if (info.size() > 1) {
-            // there is a message here with the frame event
-            info.erase(info.begin());
+        if (info.size() > 2) {
 
-            for(int i = 0; i < info.size(); i++){
+            for(int i = 2; i < info.size(); i++){
                 if(useMainThread){
                     dataMessage.push_back( info[i] );
                 }
